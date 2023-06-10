@@ -89,6 +89,9 @@ def add_summarised_content(content, text_box, replace=False, add_cr=True):
         text_box+="\n\n"
     return text_box
 
+def clear_content(string):
+    return ""
+
     
 
 def ui():
@@ -127,6 +130,5 @@ def ui():
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(copycontent, text_boxA, text_box_CompiledStory )
-    processChapter_btn.click(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary], outputs=text_box_StorySummary)
+    processChapter_btn.click(copycontent, text_boxA, text_box_CompiledStory ).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA], outputs=text_boxA)
 
