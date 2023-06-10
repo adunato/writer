@@ -25,8 +25,11 @@ except FileNotFoundError:
         "selectA": [0,0]
     }
 
-def copycontent(string):
-    return string
+def copycontent(string,add_cr=True):
+    if(add_cr):
+        return string+"\n\n"
+    else:
+        return string
 
 default_req_params = {
     'max_new_tokens': 200,
@@ -62,7 +65,7 @@ default_req_params = {
     'custom_stopping_strings': [],
 }
 
-def summarisecontent(content):
+def summarise_content(content):
     instruction = f"Summarise the following story: \n\n********\n\n{content}\n\n********\n\nSummary:\n\n"
     # return instruction
 
@@ -76,6 +79,15 @@ def summarisecontent(content):
     print(f"outputcontent: {outputcontent}")
     return outputcontent
 
+def add_summarised_content(content, text_box, replace=False, add_cr=True):
+    summarised_content = summarise_content(content)
+    if(replace):
+        text_box = summarised_content
+    else:
+        text_box += summarised_content
+    if(add_cr):
+        text_box+="\n\n"
+    return text_box
 
     
 
@@ -116,4 +128,5 @@ def ui():
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
     processChapter_btn.click(copycontent, text_boxA, text_box_CompiledStory )
-    processChapter_btn.click(summarisecontent, text_boxA, text_box_StorySummary )
+    processChapter_btn.click(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary], outputs=text_box_StorySummary)
+
