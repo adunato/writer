@@ -92,6 +92,23 @@ def add_summarised_content(content, text_box, replace=False, add_cr=True):
 def clear_content(string):
     return ""
 
+def formatted_outputs(reply):
+    return reply, generate_basic_html(reply)
+
+def generate_reply_wrapper_enriched(question, state, selectState, summary, eos_token=None, stopping_strings=None):
+    print(f"question: {question}")
+    print(f"summary: {summary}")
+    if(summary != ""):
+        prompt = f"STORY BACKGROUND\n\n{summary}\n\nSTORY\n\n{question}"
+    else:
+        prompt = f"{question}"
+    print(f"prompt: {prompt}")
+    for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
+        if shared.model_type not in ['HF_seq2seq']:
+            reply = question + reply
+        print(f"reply: {reply}")
+        yield formatted_outputs(reply)
+
     
 
 def ui():
@@ -121,12 +138,12 @@ def ui():
 
     selectStateA = gr.State('selectA')
 
-    input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA]
+    input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary]
     output_paramsA =[text_boxA, htmlA]
 
     
     generate_btn.click(gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
-        generate_reply_wrapper, inputs=input_paramsA, outputs=output_paramsA, show_progress=False)
+        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False)
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
