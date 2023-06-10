@@ -26,6 +26,8 @@ except FileNotFoundError:
         "selectA": [0,0]
     }
 
+input_elements = ['max_new_tokens', 'seed', 'temperature', 'top_p', 'top_k', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'no_repeat_ngram_size', 'min_length', 'do_sample', 'penalty_alpha', 'num_beams', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'add_bos_token', 'ban_eos_token', 'truncation_length', 'custom_stopping_strings', 'skip_special_tokens', 'preset_menu', 'stream', 'tfs', 'top_a']
+
 def copycontent(new_input,existing_text,add_cr=True):
     if(add_cr):
         return existing_text+new_input+"\n\n"
@@ -66,7 +68,9 @@ default_req_params = {
     'custom_stopping_strings': [],
 }
 
-def summarise_content(content, summarisation_template):
+summarisation_parameters = {}
+
+def summarise_content(content, summarisation_template, state):
     summarisation_file = get_matching_file_path(summarisation_template)
     if(summarisation_file == ""):
         print(f"No teplate file found for {summarisation_template}")
@@ -78,7 +82,7 @@ def summarise_content(content, summarisation_template):
 
     outputcontent = ""
 
-    for result in generate_reply_wrapper(instruction, default_req_params):
+    for result in generate_reply_wrapper(instruction, state):
         outputcontent += result[0]
 
     outputcontent = outputcontent.replace(instruction, "")
@@ -97,8 +101,8 @@ def get_matching_file_path(filename):
             return str(path)
     return ""
 
-def add_summarised_content(content, text_box, summarisation_template, replace=False, add_cr=True):
-    summarised_content = summarise_content(content, summarisation_template)
+def add_summarised_content(content, text_box, summarisation_template, state, replace=False, add_cr=True):
+    summarised_content = summarise_content(content, summarisation_template, state)
     if(replace):
         text_box = summarised_content
     else:
@@ -136,6 +140,12 @@ def get_available_templates():
     paths = (x for x in Path('extensions/writer/templates').iterdir() if x.suffix in ('.txt'))
     return ['None'] + sorted(set((k.stem for k in paths)), key=utils.natural_keys)
 
+def gather_interface_values(*args):
+    output = {}
+    for i, element in enumerate(input_elements):
+        output[element] = args[i]
+
+    return output
     
 def ui():
     params['selectA'] = [0,0]
@@ -162,11 +172,47 @@ def ui():
                 with gr.Tab('Settings'):
                     with gr.Row():
                         summarisation_template_droddown = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
-                        # modules_ui.create_refresh_button(summarisation_template_droddown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                        modules_ui.create_refresh_button(summarisation_template_droddown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
                     with gr.Row():
                         generation_template_droddown = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
-                        # modules_ui.create_refresh_button(generation_template_droddown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                        modules_ui.create_refresh_button(generation_template_droddown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                    with gr.Box():
+                        gr.Markdown('Main parameters')
+                        with gr.Row():
+                            with gr.Column():
+                                summarisation_parameters['temperature'] = gr.Slider(0.01, 1.99, value=default_req_params['temperature'], step=0.01, label='temperature', info='Primary factor to control randomness of outputs. 0 = deterministic (only the most likely token is used). Higher value = more randomness.')
+                                summarisation_parameters['top_p'] = gr.Slider(0.0, 1.0, value=default_req_params['top_p'], step=0.01, label='top_p', info='If not set to 1, select tokens with probabilities adding up to less than this number. Higher value = higher range of possible random results.')
+                                summarisation_parameters['top_k'] = gr.Slider(0, 200, value=default_req_params['top_k'], step=1, label='top_k', info='Similar to top_p, but select instead only the top_k most likely tokens. Higher value = higher range of possible random results.')
+                                summarisation_parameters['typical_p'] = gr.Slider(0.0, 1.0, value=default_req_params['typical_p'], step=0.01, label='typical_p', info='If not set to 1, select only tokens that are at least this much more likely to appear than random tokens, given the prior text.')
+                                summarisation_parameters['epsilon_cutoff'] = gr.Slider(0, 9, value=default_req_params['epsilon_cutoff'], step=0.01, label='epsilon_cutoff', info='In units of 1e-4; a reasonable value is 3. This sets a probability floor below which tokens are excluded from being sampled. Should be used with top_p, top_k, and eta_cutoff set to 0.')
+                                summarisation_parameters['eta_cutoff'] = gr.Slider(0, 20, value=default_req_params['eta_cutoff'], step=0.01, label='eta_cutoff', info='In units of 1e-4; a reasonable value is 3. Should be used with top_p, top_k, and epsilon_cutoff set to 0.')
+                                summarisation_parameters['tfs'] = gr.Slider(0.0, 1.0, value=default_req_params['tfs'], step=0.01, label='tfs')
+                                summarisation_parameters['top_a'] = gr.Slider(0.0, 1.0, value=default_req_params['top_a'], step=0.01, label='top_a')
+                                summarisation_parameters['max_new_tokens'] = gr.Slider(minimum=shared.settings['max_new_tokens_min'], maximum=shared.settings['max_new_tokens_max'], step=1, label='max_new_tokens', value=default_req_params['max_new_tokens'])
+                                summarisation_parameters['repetition_penalty'] = gr.Slider(1.0, 1.5, value=default_req_params['repetition_penalty'], step=0.01, label='repetition_penalty', info='Exponential penalty factor for repeating prior tokens. 1 means no penalty, higher value = less repetition, lower value = more repetition.')
+                                summarisation_parameters['encoder_repetition_penalty'] = gr.Slider(0.8, 1.5, value=default_req_params['encoder_repetition_penalty'], step=0.01, label='encoder_repetition_penalty', info='Also known as the "Hallucinations filter". Used to penalize tokens that are *not* in the prior text. Higher value = more likely to stay in context, lower value = more likely to diverge.')
+                                summarisation_parameters['no_repeat_ngram_size'] = gr.Slider(0, 20, step=1, value=default_req_params['no_repeat_ngram_size'], label='no_repeat_ngram_size', info='If not set to 0, specifies the length of token sets that are completely blocked from repeating at all. Higher values = blocks larger phrases, lower values = blocks words or letters from repeating. Only 0 or high values are a good idea in most cases.')
+                                summarisation_parameters['min_length'] = gr.Slider(0, 2000, step=1, value=default_req_params['min_length'], label='min_length', info='Minimum generation length in tokens.')
+                                summarisation_parameters['do_sample'] = gr.Checkbox(value=default_req_params['do_sample'], label='do_sample')
 
+                            with gr.Column():
+                                summarisation_parameters['preset_menu'] = gr.Dropdown(choices=utils.get_available_presets(), value=utils.get_available_presets()[0] if not shared.args.flexgen else 'Naive', label='Generation parameters preset')
+                                summarisation_parameters['seed'] = gr.Number(value=default_req_params['seed'], label='Seed (-1 for random)')
+                                summarisation_parameters['penalty_alpha'] = gr.Slider(0, 5, value=0, label='penalty_alpha', info='Contrastive Search is enabled by setting this to greater than zero and unchecking "do_sample". It should be used with a low value of top_k, for instance, top_k = 4.')
+                                summarisation_parameters['stream'] = gr.Checkbox(value=not shared.args.no_stream, label='Activate text streaming')
+                                summarisation_parameters['num_beams'] = gr.Slider(1, 20, step=1, value=1, label='num_beams')
+                                summarisation_parameters['length_penalty'] = gr.Slider(-5, 5, value=default_req_params['length_penalty'], label='length_penalty')
+                                summarisation_parameters['early_stopping'] = gr.Checkbox(value=default_req_params['early_stopping'], label='early_stopping')
+                                summarisation_parameters['mirostat_mode'] = gr.Slider(0, 2, step=1, value=default_req_params['mirostat_mode'], label='mirostat_mode')
+                                summarisation_parameters['mirostat_tau'] = gr.Slider(0, 10, step=0.01, value=default_req_params['mirostat_tau'], label='mirostat_tau')
+                                summarisation_parameters['mirostat_eta'] = gr.Slider(0, 1, step=0.01, value=default_req_params['mirostat_eta'], label='mirostat_eta')
+                                summarisation_parameters['ban_eos_token'] = gr.Checkbox(value=default_req_params['ban_eos_token'], label='Ban the eos_token', info='Forces the model to never end the generation prematurely.')
+                                summarisation_parameters['add_bos_token'] = gr.Checkbox(value=default_req_params['add_bos_token'], label='Add the bos_token to the beginning of prompts', info='Disabling this can make the replies more creative.')
+                                summarisation_parameters['skip_special_tokens'] = gr.Checkbox(value=default_req_params['skip_special_tokens'], label='Skip special tokens', info='Some specific models need this unset.')
+                                summarisation_parameters['custom_stopping_strings'] = gr.Textbox(lines=1, value=default_req_params["custom_stopping_strings"] or None, label='Custom stopping strings', info='In addition to the defaults. Written between "" and separated by commas. For instance: "\\nYour Assistant:", "\\nThe assistant:"')
+                                summarisation_parameters['truncation_length'] = gr.Slider(value=default_req_params['truncation_length'], minimum=shared.settings['truncation_length_min'], maximum=shared.settings['truncation_length_max'], step=1, label='Truncate the prompt up to this length', info='The leftmost tokens are removed if the prompt exceeds this length. Most models require this to be at most 2048.')
+
+    
     selectStateA = gr.State('selectA')
 
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_droddown]
@@ -178,5 +224,6 @@ def ui():
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(fn=copycontent, inputs=[text_boxA,text_box_CompiledStory], outputs=text_box_CompiledStory ).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_droddown], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA], outputs=text_boxA)
+    processChapter_btn.click(fn=copycontent, inputs=[text_boxA,text_box_CompiledStory], outputs=text_box_CompiledStory ).then(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_droddown, shared.gradio['interface_state']], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA], outputs=text_boxA)
+    #processChapter_btn.click(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state'])
 
