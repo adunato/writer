@@ -25,11 +25,11 @@ except FileNotFoundError:
         "selectA": [0,0]
     }
 
-def copycontent(string,add_cr=True):
+def copycontent(new_input,existing_text,add_cr=True):
     if(add_cr):
-        return string+"\n\n"
+        return existing_text+new_input+"\n\n"
     else:
-        return string
+        return existing_text+new_input
 
 default_req_params = {
     'max_new_tokens': 200,
@@ -147,5 +147,5 @@ def ui():
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(copycontent, text_boxA, text_box_CompiledStory ).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA], outputs=text_boxA)
+    processChapter_btn.click(fn=copycontent, inputs=[text_boxA,text_box_CompiledStory], outputs=text_box_CompiledStory ).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA], outputs=text_boxA)
 
