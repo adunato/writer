@@ -30,7 +30,7 @@ def copycontent(new_input,existing_text,add_cr=True):
         return existing_text+new_input+"\n\n"
     else:
         return existing_text+new_input
-
+#TODO enable setting interface in UI
 default_req_params = {
     'max_new_tokens': 200,
     'temperature': 0.7,
@@ -65,6 +65,7 @@ default_req_params = {
     'custom_stopping_strings': [],
 }
 
+#TODO create a template file for sunmmarisation
 def summarise_content(content):
     instruction = f"Summarise the following story: \n\n********\n\n{content}\n\n********\n\nSummary:\n\n"
     # return instruction
@@ -95,6 +96,7 @@ def clear_content(string):
 def formatted_outputs(reply):
     return reply, generate_basic_html(reply)
 
+#TODO create a template file for story generation
 def generate_reply_wrapper_enriched(question, state, selectState, summary, eos_token=None, stopping_strings=None):
     print(f"question: {question}")
     print(f"summary: {summary}")
@@ -110,7 +112,6 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, eos_t
         yield formatted_outputs(reply)
 
     
-
 def ui():
     #input_elements = list_interface_input_elements(chat=False)
     #interface_state = gr.State({k: None for k in input_elements})
