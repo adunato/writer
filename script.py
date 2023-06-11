@@ -133,13 +133,12 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, gener
         prompt = prompt.replace("{question}", question)
     else:
         prompt = f"{question}"
-    text_box_LatestContext.update(prompt)
-    print(f"prompt: {prompt}")
+    # print(f"prompt: {prompt}")
     for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
         if shared.model_type not in ['HF_seq2seq']:
             reply = question + reply
         print(f"reply: {reply}")
-        yield formatted_outputs(reply, prompt)
+        yield formatted_outputs(reply, [("prompt", prompt)])
 
 def copy_prompt_output(text_boxA, htmlA, prompt):
     return prompt
@@ -178,7 +177,7 @@ def ui():
                 with gr.Tab('Story Summary'):
                     text_box_StorySummary = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Story Summary')
                 with gr.Tab('Latest Context'):
-                    text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.')
+                    text_box_LatestContext = gr.HighlightedText(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.').style(color_map={"background": "red", "user_input": "green", "template": "blue"})
             with gr.Row():
                 with gr.Tab('General Settings'):
                     with gr.Row():
