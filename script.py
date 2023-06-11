@@ -33,7 +33,7 @@ def copycontent(new_input,existing_text,add_cr=True):
         return existing_text+new_input+"\n\n"
     else:
         return existing_text+new_input
-#TODO enable setting interface in UI
+
 default_req_params = {
     'max_new_tokens': 200,
     'temperature': 0.7,
@@ -70,6 +70,8 @@ default_req_params = {
 
 summarisation_parameters = {}
 
+text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.')
+
 def summarise_content(content, summarisation_template, state):
     summarisation_file = get_matching_file_path(summarisation_template)
     if(summarisation_file == ""):
@@ -77,8 +79,6 @@ def summarise_content(content, summarisation_template, state):
         return ""
     instruction = read_file_to_string(summarisation_file)
     instruction = instruction.replace("{content}", content)
-    # instruction = f"Summarise the following story: \n\n********\n\n{content}\n\n********\n\nSummary:\n\n"
-    # return instruction
 
     outputcontent = ""
 
@@ -101,7 +101,9 @@ def get_matching_file_path(filename):
             return str(path)
     return ""
 
-def add_summarised_content(content, text_box, summarisation_template, state, replace=False, add_cr=True):
+def add_summarised_content(content, text_box, summarisation_template, state, summarisation_enabled, replace=False, add_cr=True):
+    if(summarisation_enabled == False):
+        return ""
     summarised_content = summarise_content(content, summarisation_template, state)
     if(replace):
         text_box = summarised_content
@@ -111,11 +113,14 @@ def add_summarised_content(content, text_box, summarisation_template, state, rep
         text_box+="\n\n"
     return text_box
 
-def clear_content(string):
-    return ""
+def clear_content(string, clear_pad_content_enabled):
+    if(clear_pad_content_enabled):
+        return ""
+    else:
+        return string
 
-def formatted_outputs(reply):
-    return reply, generate_basic_html(reply)
+def formatted_outputs(reply, prompt):
+    return reply, generate_basic_html(reply), prompt
 
 def generate_reply_wrapper_enriched(question, state, selectState, summary, generation_template, eos_token=None, stopping_strings=None):
     if(summary != ""):
@@ -128,12 +133,16 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, gener
         prompt = prompt.replace("{question}", question)
     else:
         prompt = f"{question}"
+    text_box_LatestContext.update(prompt)
     print(f"prompt: {prompt}")
     for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
         if shared.model_type not in ['HF_seq2seq']:
             reply = question + reply
         print(f"reply: {reply}")
-        yield formatted_outputs(reply)
+        yield formatted_outputs(reply, prompt)
+
+def copy_prompt_output(text_boxA, htmlA, prompt):
+    return prompt
 
 
 def get_available_templates():
@@ -168,14 +177,19 @@ def ui():
                     text_box_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                 with gr.Tab('Story Summary'):
                     text_box_StorySummary = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Story Summary')
+                with gr.Tab('Latest Context'):
+                    text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.')
             with gr.Row():
-                with gr.Tab('Settings'):
+                with gr.Tab('General Settings'):
                     with gr.Row():
-                        summarisation_template_droddown = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
-                        modules_ui.create_refresh_button(summarisation_template_droddown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                        summarisation_enabled_checkbox = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
+                        clear_pad_content_enabled_checkbox = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
                     with gr.Row():
-                        generation_template_droddown = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
-                        modules_ui.create_refresh_button(generation_template_droddown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                        summarisation_template_dropdown = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
+                        modules_ui.create_refresh_button(summarisation_template_dropdown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                        generation_template_dropdown = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
+                        modules_ui.create_refresh_button(generation_template_dropdown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                with gr.Tab('Summarisation parameters'):
                     with gr.Box():
                         gr.Markdown('Summarisation parameters')
                         with gr.Row():
@@ -214,16 +228,16 @@ def ui():
 
     
     selectStateA = gr.State('selectA')
+    # prompt = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'prompt')
 
-    input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_droddown]
-    output_paramsA =[text_boxA, htmlA]
+    input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
+    output_paramsA =[text_boxA, htmlA, text_box_LatestContext]
 
     
     generate_btn.click(modules_ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
-        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False)
+        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_output, inputs=output_paramsA, outputs=text_box_LatestContext)
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(fn=copycontent, inputs=[text_boxA,text_box_CompiledStory], outputs=text_box_CompiledStory ).then(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_droddown, shared.gradio['interface_state']], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA], outputs=text_boxA)
-    #processChapter_btn.click(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state'])
+    processChapter_btn.click(fn=copycontent, inputs=[text_boxA,text_box_CompiledStory], outputs=text_box_CompiledStory ).then(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_dropdown, shared.gradio['interface_state'], summarisation_enabled_checkbox], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA)
 
