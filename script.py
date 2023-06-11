@@ -134,20 +134,16 @@ def tag_prompt_elements(template_content, summary, question):
         output_spans.append(("template", second_half_split[0].strip()))
         output_spans.append(("user_input", question))
         
-        prompt = split_template[0] + summary + second_half_split[0] + question
     elif "{summary}" in template_content:
         split_template = template_content.split("{summary}")
         output_spans.append(("template", split_template[0].strip()))
         output_spans.append(("background", summary))
-        prompt = split_template[0] + summary
     elif "{question}" in template_content:
         split_template = template_content.split("{question}")
         output_spans.append(("template", split_template[0].strip()))
         output_spans.append(("user_input", question))
-        prompt = split_template[0] + question
     else:
         output_spans.append(("user_input", question))
-        prompt = question
 
     return output_spans
 
@@ -165,7 +161,6 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, gener
     else:
         prompt = question
         output_spans = [("user_input", question)]
-    # print(f"prompt: {prompt}")
     for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
         if shared.model_type not in ['HF_seq2seq']:
             reply = question + reply
@@ -260,7 +255,6 @@ def ui():
 
     
     selectStateA = gr.State('selectA')
-    # prompt = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'prompt')
 
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
     output_paramsA =[text_boxA, htmlA, text_box_LatestContext]
