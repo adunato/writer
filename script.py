@@ -122,23 +122,56 @@ def clear_content(string, clear_pad_content_enabled):
 def formatted_outputs(reply, prompt):
     return reply, generate_basic_html(reply), prompt
 
+def tag_prompt_elements(template_content, summary, question):
+    output_spans = []
+    
+    if "{summary}" in template_content and "{question}" in template_content:
+        split_template = template_content.split("{summary}")
+        output_spans.append(("template", split_template[0].strip()))
+
+        second_half_split = split_template[1].split("{question}")
+        output_spans.append(("background", summary))
+        output_spans.append(("template", second_half_split[0].strip()))
+        output_spans.append(("user_input", question))
+        
+        prompt = split_template[0] + summary + second_half_split[0] + question
+    elif "{summary}" in template_content:
+        split_template = template_content.split("{summary}")
+        output_spans.append(("template", split_template[0].strip()))
+        output_spans.append(("background", summary))
+        prompt = split_template[0] + summary
+    elif "{question}" in template_content:
+        split_template = template_content.split("{question}")
+        output_spans.append(("template", split_template[0].strip()))
+        output_spans.append(("user_input", question))
+        prompt = split_template[0] + question
+    else:
+        output_spans.append(("user_input", question))
+        prompt = question
+
+    return output_spans
+
 def generate_reply_wrapper_enriched(question, state, selectState, summary, generation_template, eos_token=None, stopping_strings=None):
     if(summary != ""):
         template_file = get_matching_file_path(generation_template)
         if(template_file == ""):
-            print(f"No teplate file found for {generation_template}")
+            print(f"No template file found for {generation_template}")
             return ""
+        template_content = read_file_to_string(template_file)
+        output_spans = tag_prompt_elements(template_content, summary, question)
         prompt = read_file_to_string(template_file)
         prompt = prompt.replace("{summary}", summary)
-        prompt = prompt.replace("{question}", question)
+        prompt = prompt.replace("{question}", question)        
     else:
-        prompt = f"{question}"
+        prompt = question
+        output_spans = [("user_input", question)]
     # print(f"prompt: {prompt}")
     for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
         if shared.model_type not in ['HF_seq2seq']:
             reply = question + reply
         print(f"reply: {reply}")
-        yield formatted_outputs(reply, [("prompt", prompt)])
+        yield formatted_outputs(reply, output_spans)
+
 
 def copy_prompt_output(text_boxA, htmlA, prompt):
     return prompt

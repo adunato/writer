@@ -1,1 +1,7 @@
-STORY BACKGROUND\n\n{summary}\n\nSTORY\n\n{question}
+STORY BACKGROUND
+
+{summary}
+
+STORY
+
+{question}
