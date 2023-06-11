@@ -28,7 +28,9 @@ except FileNotFoundError:
 
 input_elements = ['max_new_tokens', 'seed', 'temperature', 'top_p', 'top_k', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'no_repeat_ngram_size', 'min_length', 'do_sample', 'penalty_alpha', 'num_beams', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'add_bos_token', 'ban_eos_token', 'truncation_length', 'custom_stopping_strings', 'skip_special_tokens', 'preset_menu', 'stream', 'tfs', 'top_a']
 
-def copycontent(new_input,existing_text,add_cr=True):
+def copycontent(enabled, new_input,existing_text,add_cr=True):
+    if(enabled == False):
+        return
     if(add_cr):
         return existing_text+new_input+"\n\n"
     else:
@@ -151,8 +153,6 @@ def tag_prompt_elements(template_content, summary, question):
     return output_spans
 
 def generate_reply_wrapper_enriched(question, state, selectState, summary, generation_template, eos_token=None, stopping_strings=None):
-    print(f"question: {question}")
-    print(f"state: {state}")
     if(summary != ""):
         template_file = get_matching_file_path(generation_template)
         if(template_file == ""):
@@ -221,6 +221,7 @@ def ui():
                     with gr.Row():
                         summarisation_enabled_checkbox = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
                         clear_pad_content_enabled_checkbox = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
+                        collate_story_enabled_checkbox = gr.Checkbox(value=True, label='Collate story', info='Content from writer pad is collated into the story tab')
                     with gr.Row():
                         summarisation_template_dropdown = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
                         modules_ui.create_refresh_button(summarisation_template_dropdown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
@@ -280,5 +281,8 @@ def ui():
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(fn=copycontent, inputs=[text_boxA,text_box_CompiledStory], outputs=text_box_CompiledStory ).then(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_dropdown, shared.gradio['interface_state'], summarisation_enabled_checkbox], outputs=text_box_StorySummary).then(fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA)
+    processChapter_btn.click(fn=copycontent, inputs=[collate_story_enabled_checkbox, text_boxA, text_box_CompiledStory], outputs=text_box_CompiledStory ).then(
+        fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
+        fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_dropdown, shared.gradio['interface_state'], summarisation_enabled_checkbox], outputs=text_box_StorySummary).then(
+        fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA)
 
