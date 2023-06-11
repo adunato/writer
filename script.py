@@ -10,7 +10,7 @@ from modules.text_generation import stop_everything_event
 # from modules.ui import gather_interface_values
 import modules.ui as modules_ui
 from modules import shared,ui,utils
-from modules.html_generator import generate_basic_html
+from modules.html_generator import generate_basic_html, convert_to_markdown
 from pathlib import Path
 
 try:
@@ -120,7 +120,7 @@ def clear_content(string, clear_pad_content_enabled):
         return string
 
 def formatted_outputs(reply, prompt):
-    return reply, generate_basic_html(reply), prompt
+    return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt
 
 def tag_prompt_elements(template_content, summary, question):
     output_spans = []
@@ -168,7 +168,7 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, gener
         yield formatted_outputs(reply, output_spans)
 
 
-def copy_prompt_output(text_boxA, htmlA, prompt):
+def copy_prompt_output(text_boxA, htmlA, markdownA, prompt):
     return prompt
 
 
@@ -195,6 +195,9 @@ def ui():
                 with gr.Tab('HTML'):
                     with gr.Row():
                         htmlA = gr.HTML()
+                with gr.Tab('Markdown'):
+                    with gr.Row():
+                        markdownA = gr.Markdown()
             with gr.Row():
                 generate_btn = gr.Button('Generate', variant='primary', elem_classes="small-button")
                 processChapter_btn = gr.Button('Process Chapter', elem_classes="small-button")
@@ -257,7 +260,7 @@ def ui():
     selectStateA = gr.State('selectA')
 
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
-    output_paramsA =[text_boxA, htmlA, text_box_LatestContext]
+    output_paramsA =[text_boxA, htmlA, markdownA, text_box_LatestContext]
 
     
     generate_btn.click(modules_ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
