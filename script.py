@@ -177,7 +177,7 @@ def ui():
                         generation_template_droddown = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
                         modules_ui.create_refresh_button(generation_template_droddown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
                     with gr.Box():
-                        gr.Markdown('Main parameters')
+                        gr.Markdown('Summarisation parameters')
                         with gr.Row():
                             with gr.Column():
                                 summarisation_parameters['temperature'] = gr.Slider(0.01, 1.99, value=default_req_params['temperature'], step=0.01, label='temperature', info='Primary factor to control randomness of outputs. 0 = deterministic (only the most likely token is used). Higher value = more randomness.')
@@ -198,9 +198,9 @@ def ui():
                             with gr.Column():
                                 summarisation_parameters['preset_menu'] = gr.Dropdown(choices=utils.get_available_presets(), value=utils.get_available_presets()[0] if not shared.args.flexgen else 'Naive', label='Generation parameters preset')
                                 summarisation_parameters['seed'] = gr.Number(value=default_req_params['seed'], label='Seed (-1 for random)')
-                                summarisation_parameters['penalty_alpha'] = gr.Slider(0, 5, value=0, label='penalty_alpha', info='Contrastive Search is enabled by setting this to greater than zero and unchecking "do_sample". It should be used with a low value of top_k, for instance, top_k = 4.')
-                                summarisation_parameters['stream'] = gr.Checkbox(value=not shared.args.no_stream, label='Activate text streaming')
-                                summarisation_parameters['num_beams'] = gr.Slider(1, 20, step=1, value=1, label='num_beams')
+                                summarisation_parameters['penalty_alpha'] = gr.Slider(0, 5, value=default_req_params['penalty_alpha'], label='penalty_alpha', info='Contrastive Search is enabled by setting this to greater than zero and unchecking "do_sample". It should be used with a low value of top_k, for instance, top_k = 4.')
+                                summarisation_parameters['stream'] = gr.Checkbox(value=default_req_params['stream'], label='Activate text streaming')
+                                summarisation_parameters['num_beams'] = gr.Slider(1, 20, step=1, value=default_req_params['num_beams'], label='num_beams')
                                 summarisation_parameters['length_penalty'] = gr.Slider(-5, 5, value=default_req_params['length_penalty'], label='length_penalty')
                                 summarisation_parameters['early_stopping'] = gr.Checkbox(value=default_req_params['early_stopping'], label='early_stopping')
                                 summarisation_parameters['mirostat_mode'] = gr.Slider(0, 2, step=1, value=default_req_params['mirostat_mode'], label='mirostat_mode')
