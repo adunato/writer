@@ -1,1 +1,10 @@
-Summarise the following story: \n\n********\n\n{content}\n\n********\n\nSummary:\n\n
+Summarise the following story: 
+
+********
+
+{content}
+
+********
+
+Summary:
+
