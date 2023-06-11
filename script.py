@@ -33,6 +33,9 @@ def copycontent(new_input,existing_text,add_cr=True):
         return existing_text+new_input+"\n\n"
     else:
         return existing_text+new_input
+    
+def copy_string(string):
+    return string
 
 default_req_params = {
     'max_new_tokens': 200,
@@ -148,6 +151,8 @@ def tag_prompt_elements(template_content, summary, question):
     return output_spans
 
 def generate_reply_wrapper_enriched(question, state, selectState, summary, generation_template, eos_token=None, stopping_strings=None):
+    print(f"question: {question}")
+    print(f"state: {state}")
     if(summary != ""):
         template_file = get_matching_file_path(generation_template)
         if(template_file == ""):
@@ -164,13 +169,14 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, gener
     for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
         if shared.model_type not in ['HF_seq2seq']:
             reply = question + reply
-        print(f"reply: {reply}")
         yield formatted_outputs(reply, output_spans)
 
 
 def copy_prompt_output(text_boxA, htmlA, markdownA, prompt):
     return prompt
 
+def copy_args(*args):
+    return args
 
 def get_available_templates():
     paths = (x for x in Path('extensions/writer/templates').iterdir() if x.suffix in ('.txt'))
@@ -200,6 +206,7 @@ def ui():
                         markdownA = gr.Markdown()
             with gr.Row():
                 generate_btn = gr.Button('Generate', variant='primary', elem_classes="small-button")
+                regenerate_btn = gr.Button('Regenerate', elem_classes="small-button")
                 processChapter_btn = gr.Button('Process Chapter', elem_classes="small-button")
                 stop_btnA = gr.Button('Stop', elem_classes="small-button")
             with gr.Row():
@@ -258,13 +265,18 @@ def ui():
 
     
     selectStateA = gr.State('selectA')
+    last_input = gr.State('last_input')
 
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
+    last_input_params = [last_input,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
     output_paramsA =[text_boxA, htmlA, markdownA, text_box_LatestContext]
 
     
-    generate_btn.click(modules_ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+    generate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(copy_string, text_boxA, last_input).then(
         fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_output, inputs=output_paramsA, outputs=text_box_LatestContext)
+    
+    regenerate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
+        fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_output, inputs=output_paramsA, outputs=text_box_LatestContext)
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
