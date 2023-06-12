@@ -333,19 +333,20 @@ def ui():
                         html_CompiledStory = gr.HTML(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('Markdown'):
                         markdown_CompiledStory = gr.Markdown(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
-                with gr.Row():
-                    with gr.Column():
-                        gr.Markdown('### Download Compiled Story (txt)')
-                        download_compiled_text_file = gr.File()
-                        download_compiled_text_file_button = gr.Button(value='Click me')
-                    with gr.Column():
-                        gr.Markdown('### Download Compiled Story (HTML)')
-                        download_compiled_html_file = gr.File()
-                        download_compiled_html_file_button = gr.Button(value='Click me')
-                    with gr.Column():
-                        gr.Markdown('### Download Compiled Story (markdown)')
-                        download_compiled_markdown_file = gr.File()
-                        download_compiled_markdown_file_button = gr.Button(value='Click me')
+                with gr.Accordion('Download Compiled Story', open=False):
+                    with gr.Row():
+                        with gr.Column():
+                            gr.Markdown('### Download Compiled Story (txt)')
+                            download_compiled_text_file = gr.File()
+                            download_compiled_text_file_button = gr.Button(value='Click me')
+                        with gr.Column():
+                            gr.Markdown('### Download Compiled Story (HTML)')
+                            download_compiled_html_file = gr.File()
+                            download_compiled_html_file_button = gr.Button(value='Click me')
+                        with gr.Column():
+                            gr.Markdown('### Download Compiled Story (markdown)')
+                            download_compiled_markdown_file = gr.File()
+                            download_compiled_markdown_file_button = gr.Button(value='Click me')
             with gr.Accordion('Story Generation', open=False):
                 with gr.Row():
                     with gr.Tab('Story Summary'):
