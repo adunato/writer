@@ -5,13 +5,14 @@ from modules.extensions import apply_extensions
 from modules.text_generation import encode, get_max_prompt_length
 from modules.text_generation import generate_reply
 from modules.text_generation import generate_reply_wrapper
-from modules.text_generation import stop_everything_event
+from modules.text_generation import stop_everything_event, get_encoded_length
 # from modules.ui import create_refresh_button
 # from modules.ui import gather_interface_values
 import modules.ui as modules_ui
 from modules import shared,ui,utils
 from modules.html_generator import generate_basic_html, convert_to_markdown
 from pathlib import Path
+import yaml
 
 try:
     with open('notebook.sav', 'rb') as f:
@@ -28,11 +29,11 @@ except FileNotFoundError:
 
 input_elements = ['max_new_tokens', 'seed', 'temperature', 'top_p', 'top_k', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'no_repeat_ngram_size', 'min_length', 'do_sample', 'penalty_alpha', 'num_beams', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'add_bos_token', 'ban_eos_token', 'truncation_length', 'custom_stopping_strings', 'skip_special_tokens', 'preset_menu', 'stream', 'tfs', 'top_a']
 
-def copycontent(enabled, new_input,existing_text,add_cr=True):
+def copycontent(enabled, new_input, existing_text, chapter_separator):
     if(enabled == False):
         return
-    if(add_cr):
-        return existing_text+new_input+"\n\n"
+    if(chapter_separator != ""):
+        return existing_text+new_input+chapter_separator
     else:
         return existing_text+new_input
     
@@ -124,33 +125,52 @@ def clear_content(string, clear_pad_content_enabled):
     else:
         return string
 
-def formatted_outputs(reply, prompt):
-    return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt
+def formatted_outputs(reply, prompt_analysis, token_count):
+    return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt_analysis, format_token_count(token_count)
 
 def tag_prompt_elements(template_content, summary, question):
     output_spans = []
-    
+    length_summary = {"template": 0, "background": 0, "user_input": 0}
+
     if "{summary}" in template_content and "{question}" in template_content:
         split_template = template_content.split("{summary}")
+        length_summary["template"] += get_encoded_length(split_template[0].strip())
         output_spans.append(("template", split_template[0].strip()))
 
         second_half_split = split_template[1].split("{question}")
+        length_summary["background"] += get_encoded_length(summary)
         output_spans.append(("background", summary))
+        length_summary["template"] += get_encoded_length(second_half_split[0].strip())
         output_spans.append(("template", second_half_split[0].strip()))
+        length_summary["user_input"] += get_encoded_length(question)
         output_spans.append(("user_input", question))
         
     elif "{summary}" in template_content:
         split_template = template_content.split("{summary}")
+        length_summary["template"] += get_encoded_length(split_template[0].strip())
         output_spans.append(("template", split_template[0].strip()))
+        length_summary["background"] += get_encoded_length(summary)
         output_spans.append(("background", summary))
     elif "{question}" in template_content:
         split_template = template_content.split("{question}")
+        length_summary["template"] += get_encoded_length(split_template[0].strip())
         output_spans.append(("template", split_template[0].strip()))
+        length_summary["user_input"] += get_encoded_length(question)
         output_spans.append(("user_input", question))
     else:
+        length_summary["user_input"] += get_encoded_length(question)
         output_spans.append(("user_input", question))
 
-    return output_spans
+    length_summary["total"] = sum(length_summary.values())
+
+    return output_spans, length_summary
+
+def format_token_count(token_count):
+    summary_strs = ["**Token Count Summary**"]
+    for key, value in token_count.items():
+        summary_strs.append(f"{key.capitalize()}: {value}")
+    return ', '.join(summary_strs)
+
 
 def generate_reply_wrapper_enriched(question, state, selectState, summary, generation_template, eos_token=None, stopping_strings=None):
     if(summary != ""):
@@ -159,21 +179,23 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, gener
             print(f"No template file found for {generation_template}")
             return ""
         template_content = read_file_to_string(template_file)
-        output_spans = tag_prompt_elements(template_content, summary, question)
+        [output_spans, token_count] = tag_prompt_elements(template_content, summary, question)
         prompt = read_file_to_string(template_file)
         prompt = prompt.replace("{summary}", summary)
         prompt = prompt.replace("{question}", question)        
     else:
         prompt = question
         output_spans = [("user_input", question)]
+        token_count = {"total" : 0}
+        token_count["total"] = get_encoded_length(question)
     for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
         if shared.model_type not in ['HF_seq2seq']:
             reply = question + reply
-        yield formatted_outputs(reply, output_spans)
+        yield formatted_outputs(reply, output_spans, token_count)
 
 
-def copy_prompt_output(text_boxA, htmlA, markdownA, prompt):
-    return prompt
+def copy_prompt_analysis_output(text_boxA, htmlA, markdownA, prompt_analysis, token_count):
+    return prompt_analysis
 
 def copy_args(*args):
     return args
@@ -188,6 +210,48 @@ def gather_interface_values(*args):
         output[element] = args[i]
 
     return output
+
+def load_preset_values(preset_menu, state, return_dict=False):
+    generate_params = {
+        'do_sample': True,
+        'temperature': 1,
+        'top_p': 1,
+        'typical_p': 1,
+        'epsilon_cutoff': 0,
+        'eta_cutoff': 0,
+        'tfs': 1,
+        'top_a': 0,
+        'repetition_penalty': 1,
+        'encoder_repetition_penalty': 1,
+        'top_k': 0,
+        'num_beams': 1,
+        'penalty_alpha': 0,
+        'min_length': 0,
+        'length_penalty': 1,
+        'no_repeat_ngram_size': 0,
+        'early_stopping': False,
+        'mirostat_mode': 0,
+        'mirostat_tau': 5.0,
+        'mirostat_eta': 0.1,
+    }
+
+    with open(Path(f'presets/{preset_menu}.yaml'), 'r') as infile:
+        print(f"infile: {infile}")
+        preset = yaml.safe_load(infile)
+        print(f"preset: {preset}")
+
+    for k in preset:
+        print(f"Updating param {k}: from {generate_params[k]} to {preset[k]}")
+        generate_params[k] = preset[k]
+
+    generate_params['temperature'] = min(1.99, generate_params['temperature'])
+    if return_dict:
+        return generate_params
+    else:
+        state.update(generate_params)
+        print(f"state: {state}")
+        print(f"generate_params: {generate_params}")
+        return state, *[generate_params[k] for k in ['do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']]
     
 def ui():
     params['selectA'] = [0,0]
@@ -215,6 +279,7 @@ def ui():
                 with gr.Tab('Story Summary'):
                     text_box_StorySummary = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Story Summary')
                 with gr.Tab('Latest Context'):
+                    token_summary_label = gr.Markdown(value = '')
                     text_box_LatestContext = gr.HighlightedText(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.').style(color_map={"background": "red", "user_input": "green", "template": "blue"})
             with gr.Row():
                 with gr.Tab('General Settings'):
@@ -222,6 +287,7 @@ def ui():
                         summarisation_enabled_checkbox = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
                         clear_pad_content_enabled_checkbox = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
                         collate_story_enabled_checkbox = gr.Checkbox(value=True, label='Collate story', info='Content from writer pad is collated into the story tab')
+                        chapter_separator_textbox = gr.Textbox(value='\n*********\n', elem_classes="textbox", lines=1, label = 'Chapter Separator', info = 'Adds a separator after each chapter has been processed in the collated story')
                     with gr.Row():
                         summarisation_template_dropdown = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
                         modules_ui.create_refresh_button(summarisation_template_dropdown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
@@ -267,22 +333,26 @@ def ui():
     
     selectStateA = gr.State('selectA')
     last_input = gr.State('last_input')
+    summarisation_parameters['interface_state'] = shared.gradio['interface_state']
 
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
     last_input_params = [last_input,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
-    output_paramsA =[text_boxA, htmlA, markdownA, text_box_LatestContext]
+    output_paramsA =[text_boxA, htmlA, markdownA, text_box_LatestContext, token_summary_label]
 
+    #return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt_analysis, token_count
     
     generate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(copy_string, text_boxA, last_input).then(
-        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_output, inputs=output_paramsA, outputs=text_box_LatestContext)
+        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext)
     
     regenerate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
-        fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_output, inputs=output_paramsA, outputs=text_box_LatestContext)
+        fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext)
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(fn=copycontent, inputs=[collate_story_enabled_checkbox, text_boxA, text_box_CompiledStory], outputs=text_box_CompiledStory ).then(
+    processChapter_btn.click(fn=copycontent, inputs=[collate_story_enabled_checkbox, text_boxA, text_box_CompiledStory, chapter_separator_textbox], outputs=text_box_CompiledStory ).then(
         fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
         fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_dropdown, shared.gradio['interface_state'], summarisation_enabled_checkbox], outputs=text_box_StorySummary).then(
         fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA)
+    
+    summarisation_parameters['preset_menu'].change(load_preset_values, [summarisation_parameters[k] for k in ['preset_menu', 'interface_state']], [summarisation_parameters[k] for k in ['interface_state','do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
 
