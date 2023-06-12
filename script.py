@@ -13,6 +13,8 @@ from modules import shared,ui,utils
 from modules.html_generator import generate_basic_html, convert_to_markdown
 from pathlib import Path
 import yaml
+from datetime import datetime
+import json
 
 try:
     with open('notebook.sav', 'rb') as f:
@@ -253,6 +255,32 @@ def load_preset_values(preset_menu, state, return_dict=False):
         print(f"generate_params: {generate_params}")
         return state, *[generate_params[k] for k in ['do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']]
     
+def save_session(writer_text_box, summary_text_box, compiled_story_text_box, timestamp=False):
+    if timestamp:
+        fname = f"{shared.character}_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    else:
+        fname = f"{shared.character}_persistent.json"
+
+    if not Path('logs').exists():
+        Path('logs').mkdir()
+
+    with open(Path(f'logs/{fname}'), 'w', encoding='utf-8') as f:
+        f.write(json.dumps({'writer_text_box': writer_text_box, 'summary_text_box' : summary_text_box, 'compiled_story_text_box' : compiled_story_text_box}, indent=2))
+
+    return Path(f'logs/{fname}')
+
+def load_session(file):
+    file = file.decode('utf-8')
+    j = json.loads(file)
+    if 'writer_text_box' in j:
+        writer_text_box = j['writer_text_box']
+    if 'summary_text_box' in j:
+        summary_text_box = j['summary_text_box']
+    if 'compiled_story_text_box' in j:
+        compiled_story_text_box = j['compiled_story_text_box']
+    return writer_text_box, summary_text_box, compiled_story_text_box
+
+    
 def ui():
     params['selectA'] = [0,0]
 
@@ -273,14 +301,22 @@ def ui():
                 regenerate_btn = gr.Button('Regenerate', elem_classes="small-button")
                 processChapter_btn = gr.Button('Process Chapter', elem_classes="small-button")
                 stop_btnA = gr.Button('Stop', elem_classes="small-button")
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown('### Upload')
+                    upload_session_file = gr.File(type='binary', file_types=['.json'])
+                with gr.Column():
+                    gr.Markdown('### Load')
+                    download_session_file = gr.File()
+                    download_session_file_button = gr.Button(value='Click me')
             with gr.Accordion('Compiled Story', open=True):
                 with gr.Row():
                     with gr.Tab('Text'):
                         text_box_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('HTML'):
-                        text_box_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        html_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('Markdown'):
-                        text_box_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        markdown_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
             with gr.Accordion('Story Generation', open=False):
                 with gr.Row():
                     with gr.Tab('Story Summary'):
@@ -363,4 +399,8 @@ def ui():
         fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA)
     
     summarisation_parameters['preset_menu'].change(load_preset_values, [summarisation_parameters[k] for k in ['preset_menu', 'interface_state']], [summarisation_parameters[k] for k in ['interface_state','do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
+
+    upload_session_file.upload(load_session, upload_session_file,[text_boxA, text_box_StorySummary, text_box_CompiledStory])
+    download_session_file_button.click(fn = save_session, inputs = [text_boxA, text_box_StorySummary, text_box_CompiledStory], outputs = download_session_file)
+
 
