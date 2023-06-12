@@ -128,7 +128,7 @@ def clear_content(string, clear_pad_content_enabled):
         return string
 
 def formatted_outputs(reply, prompt_analysis, token_count):
-    return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt_analysis, format_token_count(token_count)
+    return reply, prompt_analysis, format_token_count(token_count)
 
 def tag_prompt_elements(template_content, summary, question):
     output_spans = []
@@ -257,9 +257,9 @@ def load_preset_values(preset_menu, state, return_dict=False):
     
 def save_session(writer_text_box, summary_text_box, compiled_story_text_box, timestamp=False):
     if timestamp:
-        fname = f"{shared.character}_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+        fname = f"session_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
     else:
-        fname = f"{shared.character}_persistent.json"
+        fname = f"session_persistent.json"
 
     if not Path('logs').exists():
         Path('logs').mkdir()
@@ -268,6 +268,21 @@ def save_session(writer_text_box, summary_text_box, compiled_story_text_box, tim
         f.write(json.dumps({'writer_text_box': writer_text_box, 'summary_text_box' : summary_text_box, 'compiled_story_text_box' : compiled_story_text_box}, indent=2))
 
     return Path(f'logs/{fname}')
+
+def save_compiled_file(compiled_story_text, file_mode, timestamp=False):
+    if timestamp:
+        fname = f"compiled_story_{datetime.now().strftime('%Y%m%d-%H%M%S')}.{file_mode}"
+    else:
+        fname = f"compiled_story_persistent.{file_mode}"
+
+    if not Path('logs').exists():
+        Path('logs').mkdir()
+
+    with open(Path(f'logs/{fname}'), 'w', encoding='utf-8') as f:
+        f.write(compiled_story_text)
+
+    return Path(f'logs/{fname}')
+
 
 def load_session(file):
     file = file.decode('utf-8')
@@ -301,22 +316,36 @@ def ui():
                 regenerate_btn = gr.Button('Regenerate', elem_classes="small-button")
                 processChapter_btn = gr.Button('Process Chapter', elem_classes="small-button")
                 stop_btnA = gr.Button('Stop', elem_classes="small-button")
-            with gr.Row():
-                with gr.Column():
-                    gr.Markdown('### Upload')
-                    upload_session_file = gr.File(type='binary', file_types=['.json'])
-                with gr.Column():
-                    gr.Markdown('### Load')
-                    download_session_file = gr.File()
-                    download_session_file_button = gr.Button(value='Click me')
+            with gr.Accordion('Session', open=False):
+                with gr.Row():
+                    with gr.Column():
+                        gr.Markdown('### Upload Session')
+                        upload_session_file = gr.File(type='binary', file_types=['.json'])
+                    with gr.Column():
+                        gr.Markdown('### Download Session')
+                        download_session_file = gr.File()
+                        download_session_file_button = gr.Button(value='Click me')
             with gr.Accordion('Compiled Story', open=True):
                 with gr.Row():
                     with gr.Tab('Text'):
                         text_box_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('HTML'):
-                        html_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        html_CompiledStory = gr.HTML(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('Markdown'):
-                        markdown_CompiledStory = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        markdown_CompiledStory = gr.Markdown(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                with gr.Row():
+                    with gr.Column():
+                        gr.Markdown('### Download Compiled Story (txt)')
+                        download_compiled_text_file = gr.File()
+                        download_compiled_text_file_button = gr.Button(value='Click me')
+                    with gr.Column():
+                        gr.Markdown('### Download Compiled Story (HTML)')
+                        download_compiled_html_file = gr.File()
+                        download_compiled_html_file_button = gr.Button(value='Click me')
+                    with gr.Column():
+                        gr.Markdown('### Download Compiled Story (markdown)')
+                        download_compiled_markdown_file = gr.File()
+                        download_compiled_markdown_file_button = gr.Button(value='Click me')
             with gr.Accordion('Story Generation', open=False):
                 with gr.Row():
                     with gr.Tab('Story Summary'):
@@ -379,28 +408,52 @@ def ui():
     last_input = gr.State('last_input')
     summarisation_parameters['interface_state'] = shared.gradio['interface_state']
 
+    file_mode_txt = gr.State('txt')
+    file_mode_html = gr.State('html')
+    file_mode_markdown = gr.State('markdown')
+
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
     last_input_params = [last_input,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
-    output_paramsA =[text_boxA, htmlA, markdownA, text_box_LatestContext, token_summary_label]
+    output_paramsA =[text_boxA, text_box_LatestContext, token_summary_label]
 
     #return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt_analysis, token_count
     
-    generate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(copy_string, text_boxA, last_input).then(
-        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext)
+    generate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
+        copy_string, text_boxA, last_input).then(
+        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(
+        fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext).then(
+        fn = generate_basic_html, inputs = text_boxA, outputs = htmlA).then(
+        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA)
     
     regenerate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
-        fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=output_paramsA, show_progress=False).then(fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext)
+        fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=output_paramsA, show_progress=False).then(
+        fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext).then(
+        fn = generate_basic_html, inputs = text_boxA, outputs = htmlA).then(
+        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA)
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
     processChapter_btn.click(fn=copycontent, inputs=[collate_story_enabled_checkbox, text_boxA, text_box_CompiledStory, chapter_separator_textbox], outputs=text_box_CompiledStory ).then(
         fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
         fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_dropdown, shared.gradio['interface_state'], summarisation_enabled_checkbox], outputs=text_box_StorySummary).then(
-        fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA)
+        fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA).then(
+        fn = generate_basic_html, inputs = text_box_CompiledStory, outputs = html_CompiledStory).then(
+        fn = convert_to_markdown, inputs = text_box_CompiledStory, outputs = markdown_CompiledStory)
     
     summarisation_parameters['preset_menu'].change(load_preset_values, [summarisation_parameters[k] for k in ['preset_menu', 'interface_state']], [summarisation_parameters[k] for k in ['interface_state','do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
 
-    upload_session_file.upload(load_session, upload_session_file,[text_boxA, text_box_StorySummary, text_box_CompiledStory])
+    upload_session_file.upload(load_session, upload_session_file,[text_boxA, text_box_StorySummary, text_box_CompiledStory]).then(
+        fn = generate_basic_html, inputs = text_boxA, outputs = htmlA).then(
+        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA).then(
+        fn = generate_basic_html, inputs = text_box_CompiledStory, outputs = html_CompiledStory).then(
+        fn = convert_to_markdown, inputs = text_box_CompiledStory, outputs = markdown_CompiledStory)
+    
     download_session_file_button.click(fn = save_session, inputs = [text_boxA, text_box_StorySummary, text_box_CompiledStory], outputs = download_session_file)
+
+    download_compiled_text_file_button.click(fn = save_compiled_file, inputs = [text_box_CompiledStory, file_mode_txt], outputs = download_compiled_text_file)
+
+    download_compiled_html_file_button.click(fn = save_compiled_file, inputs = [html_CompiledStory, file_mode_html], outputs = download_compiled_html_file)
+
+    download_compiled_markdown_file_button.click(fn = save_compiled_file, inputs = [markdown_CompiledStory, file_mode_markdown], outputs = download_compiled_markdown_file)
 
 
