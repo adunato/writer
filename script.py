@@ -196,11 +196,14 @@ def generate_reply_wrapper_enriched(question, state, selectState, summary, gener
         yield formatted_outputs(reply, output_spans, token_count)
 
 
-def copy_prompt_analysis_output(text_boxA, htmlA, markdownA, prompt_analysis, token_count):
+def copy_prompt_analysis_output(text_boxA, prompt_analysis, token_count):
     return prompt_analysis
 
 def copy_args(*args):
     return args
+
+def copy_string(string):
+    return string
 
 def get_available_templates():
     paths = (x for x in Path('extensions/writer/templates').iterdir() if x.suffix in ('.txt'))
@@ -298,7 +301,6 @@ def load_session(file):
     
 def ui():
     params['selectA'] = [0,0]
-
     with gr.Row():
         with gr.Column():
             with gr.Row():
@@ -316,6 +318,8 @@ def ui():
                 regenerate_btn = gr.Button('Regenerate', elem_classes="small-button")
                 processChapter_btn = gr.Button('Process Chapter', elem_classes="small-button")
                 stop_btnA = gr.Button('Stop', elem_classes="small-button")
+            with gr.Row():
+                token_summary_label1 = gr.Markdown(value = '')
             with gr.Accordion('Session', open=False):
                 with gr.Row():
                     with gr.Column():
@@ -352,7 +356,7 @@ def ui():
                     with gr.Tab('Story Summary'):
                         text_box_StorySummary = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Story Summary')
                     with gr.Tab('Latest Context'):
-                        token_summary_label = gr.Markdown(value = '')
+                        token_summary_label2 = gr.Markdown(value = '')
                         text_box_LatestContext = gr.HighlightedText(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.').style(color_map={"background": "red", "user_input": "green", "template": "blue"})
             with gr.Accordion('Settings', open=False):
                 with gr.Row():
@@ -415,7 +419,7 @@ def ui():
 
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
     last_input_params = [last_input,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
-    output_paramsA =[text_boxA, text_box_LatestContext, token_summary_label]
+    output_paramsA =[text_boxA, text_box_LatestContext, token_summary_label1]
 
     #return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt_analysis, token_count
     
@@ -424,13 +428,15 @@ def ui():
         fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(
         fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext).then(
         fn = generate_basic_html, inputs = text_boxA, outputs = htmlA).then(
-        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA)
+        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA).then(
+        fn = copy_string, inputs = token_summary_label1, outputs = token_summary_label2)
     
     regenerate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
         fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=output_paramsA, show_progress=False).then(
         fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext).then(
         fn = generate_basic_html, inputs = text_boxA, outputs = htmlA).then(
-        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA)
+        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA).then(
+        fn = copy_string, inputs = token_summary_label1, outputs = token_summary_label2)
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
