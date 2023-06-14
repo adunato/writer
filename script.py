@@ -477,13 +477,16 @@ def ui():
     file_mode_html = gr.State('html')
     file_mode_markdown = gr.State('markdown')
 
+    generating_text_str = gr.State('ℹ Generating text')
+
+    processing_chapter_str = gr.State('ℹ Processing Chapter')
+    chapter_processed_successfully_str = gr.State('✔ Chapter Processed Successfully')
+
     input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
     last_input_params = [last_input,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
     output_paramsA =[text_boxA, text_box_LatestContext, token_summary_label1]
 
-    #return reply, generate_basic_html(reply), convert_to_markdown(reply), prompt_analysis, token_count
-    
-    generate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
+    generate_btn.click(copy_string, generating_text_str, token_summary_label1).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
         copy_string, text_boxA, last_input).then(
         fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(
         fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext).then(
@@ -500,12 +503,13 @@ def ui():
 
     stop_btnA.click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(fn=copycontent, inputs=[collate_story_enabled_checkbox, text_boxA, text_box_CompiledStory, chapter_separator_textbox], outputs=text_box_CompiledStory ).then(
+    processChapter_btn.click(copy_string, processing_chapter_str, token_summary_label1).then(fn=copycontent, inputs=[collate_story_enabled_checkbox, text_boxA, text_box_CompiledStory, chapter_separator_textbox], outputs=text_box_CompiledStory ).then(
         fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
         fn=add_summarised_content, inputs=[text_boxA, text_box_StorySummary, summarisation_template_dropdown, shared.gradio['interface_state'], summarisation_enabled_checkbox], outputs=text_box_StorySummary).then(
         fn=clear_content, inputs=[text_boxA, clear_pad_content_enabled_checkbox], outputs=text_boxA).then(
         fn = generate_basic_html, inputs = text_box_CompiledStory, outputs = html_CompiledStory).then(
-        fn = convert_to_markdown, inputs = text_box_CompiledStory, outputs = markdown_CompiledStory)
+        fn = convert_to_markdown, inputs = text_box_CompiledStory, outputs = markdown_CompiledStory).then(
+        copy_string, chapter_processed_successfully_str, token_summary_label1)
     
     summarisation_parameters['preset_menu'].change(load_preset_values, [summarisation_parameters[k] for k in ['preset_menu', 'interface_state']], [summarisation_parameters[k] for k in ['interface_state','do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
 
