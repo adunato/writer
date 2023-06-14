@@ -494,6 +494,16 @@ def ui():
         fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA).then(
         fn = copy_string, inputs = token_summary_label1, outputs = token_summary_label2)
     
+    text_boxA.submit(copy_string, generating_text_str, token_summary_label1).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
+        copy_string, text_boxA, last_input).then(
+        fn=generate_reply_wrapper_enriched, inputs=input_paramsA, outputs=output_paramsA, show_progress=False).then(
+        fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext).then(
+        fn = generate_basic_html, inputs = text_boxA, outputs = htmlA).then(
+        fn = convert_to_markdown, inputs = text_boxA, outputs = markdownA).then(
+        fn = copy_string, inputs = token_summary_label1, outputs = token_summary_label2)
+    
+    #TODO Add an instruction panel
+    
     regenerate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
         fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=output_paramsA, show_progress=False).then(
         fn=copy_prompt_analysis_output, inputs=output_paramsA, outputs=text_box_LatestContext).then(
