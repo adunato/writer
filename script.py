@@ -366,71 +366,71 @@ def ui():
             with gr.Row():
                 with gr.Tab('Text'):
                     with gr.Row():
-                        writer_pad_textbox = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Writer Pad')
+                        writer_ui["writer_pad_textbox"] = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Writer Pad')
                 with gr.Tab('HTML'):
                     with gr.Row():
-                        writer_pad_html = gr.HTML()
+                        writer_ui["writer_pad_html"] = gr.HTML()
                 with gr.Tab('Markdown'):
                     with gr.Row():
-                        writer_pad_markdown = gr.Markdown()
+                        writer_ui["writer_pad_markdown"] = gr.Markdown()
             with gr.Row():
-                generate_btn = gr.Button('Generate', variant='primary', elem_classes="small-button")
-                regenerate_btn = gr.Button('Regenerate', elem_classes="small-button")
-                processChapter_btn = gr.Button('Process Chapter', elem_classes="small-button")
-                stop_btn = gr.Button('Stop', elem_classes="small-button")
+                writer_ui["generate_btn"] = gr.Button('Generate', variant='primary', elem_classes="small-button")
+                writer_ui["regenerate_btn"] = gr.Button('Regenerate', elem_classes="small-button")
+                writer_ui["processChapter_btn"] = gr.Button('Process Chapter', elem_classes="small-button")
+                writer_ui["stop_btn"] = gr.Button('Stop', elem_classes="small-button")
             with gr.Row():
-                token_summary_label1 = gr.Markdown(value = '')
+                writer_ui["token_summary_label1"] = gr.Markdown(value = '')
             with gr.Accordion('Session', open=False):
                 with gr.Row():
                     with gr.Column():
                         gr.Markdown('### Upload Session')
-                        upload_session_file = gr.File(type='binary', file_types=['.json'])
+                        writer_ui["upload_session_file"] = gr.File(type='binary', file_types=['.json'])
                     with gr.Column():
                         gr.Markdown('### Download Session')
-                        download_session_file = gr.File()
-                        download_session_file_button = gr.Button(value='Click me')
+                        writer_ui["download_session_file"] = gr.File()
+                        writer_ui["download_session_file_button"] = gr.Button(value='Click me')
             with gr.Accordion('Compiled Story', open=True):
                 with gr.Row():
                     with gr.Tab('Text'):
-                        compiled_story_textbox = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        writer_ui["compiled_story_textbox"] = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('HTML'):
-                        compiled_story_html = gr.HTML(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        writer_ui["compiled_story_html"] = gr.HTML(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('Markdown'):
-                        compiled_story_markdown = gr.Markdown(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        writer_ui["compiled_story_markdown"] = gr.Markdown(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                 with gr.Accordion('Download Compiled Story', open=False):
                     with gr.Row():
                         with gr.Column():
                             gr.Markdown('### Download Compiled Story (txt)')
-                            download_compiled_text_file = gr.File()
-                            download_compiled_text_file_button = gr.Button(value='Click me')
+                            writer_ui["download_compiled_text_file"] = gr.File()
+                            writer_ui["download_compiled_text_file_button"] = gr.Button(value='Click me')
                         with gr.Column():
                             gr.Markdown('### Download Compiled Story (HTML)')
-                            download_compiled_html_file = gr.File()
-                            download_compiled_html_file_button = gr.Button(value='Click me')
+                            writer_ui["download_compiled_html_file"] = gr.File()
+                            writer_ui["download_compiled_html_file_button"] = gr.Button(value='Click me')
                         with gr.Column():
                             gr.Markdown('### Download Compiled Story (markdown)')
-                            download_compiled_markdown_file = gr.File()
-                            download_compiled_markdown_file_button = gr.Button(value='Click me')
+                            writer_ui["download_compiled_markdown_file"] = gr.File()
+                            writer_ui["download_compiled_markdown_file_button"] = gr.Button(value='Click me')
             with gr.Accordion('Story Generation', open=False):
                 with gr.Row():
                     with gr.Tab('Story Summary'):
-                        story_summary_textbox = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Story Summary')
+                        writer_ui["story_summary_textbox"] = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Story Summary')
                     with gr.Tab('Latest Context'):
-                        token_summary_label2 = gr.Markdown(value = '')
-                        latest_context_textbox = gr.HighlightedText(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.').style(color_map={"background": "red", "user_input": "green", "template": "blue"})
+                        writer_ui["token_summary_label2"] = gr.Markdown(value = '')
+                        writer_ui["latest_context_textbox"] = gr.HighlightedText(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.').style(color_map={"background": "red", "user_input": "green", "template": "blue"})
             with gr.Accordion('Settings', open=False):
                 with gr.Row():
                     with gr.Tab('General Settings'):
                         with gr.Row():
-                            summarisation_enabled_checkbox = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
-                            clear_pad_content_enabled_checkbox = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
-                            collate_story_enabled_checkbox = gr.Checkbox(value=True, label='Collate story', info='Content from writer pad is collated into the story tab')
-                            chapter_separator_textbox = gr.Textbox(value='\n*********\n', elem_classes="textbox", lines=1, label = 'Chapter Separator', info = 'Adds a separator after each chapter has been processed in the collated story')
+                            writer_ui["summarisation_enabled_checkbox"] = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
+                            writer_ui["clear_pad_content_enabled_checkbox"] = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
+                            writer_ui["collate_story_enabled_checkbox"] = gr.Checkbox(value=True, label='Collate story', info='Content from writer pad is collated into the story tab')
+                            writer_ui["chapter_separator_textbox"] = gr.Textbox(value='\n*********\n', elem_classes="textbox", lines=1, label = 'Chapter Separator', info = 'Adds a separator after each chapter has been processed in the collated story')
                         with gr.Row():
-                            summarisation_template_dropdown = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
-                            modules_ui.create_refresh_button(summarisation_template_dropdown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
-                            generation_template_dropdown = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
-                            modules_ui.create_refresh_button(generation_template_dropdown, lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                            writer_ui["summarisation_template_dropdown"] = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
+                            modules_ui.create_refresh_button(writer_ui["summarisation_template_dropdown"], lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                            writer_ui["generation_template_dropdown"] = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
+                            modules_ui.create_refresh_button(writer_ui["generation_template_dropdown"], lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
                     with gr.Tab('Summarisation parameters'):
                         with gr.Box():
                             gr.Markdown('Summarisation parameters')
@@ -480,59 +480,59 @@ def ui():
     processing_chapter_str = gr.State('ℹ Processing Chapter')
     chapter_processed_successfully_str = gr.State('✔ Chapter Processed Successfully')
 
-    generation_input_params = [writer_pad_textbox,shared.gradio['interface_state'], story_summary_textbox, generation_template_dropdown]
-    last_input_params = [last_input,shared.gradio['interface_state'], story_summary_textbox, generation_template_dropdown]
-    generation_output_params =[writer_pad_textbox, latest_context_textbox, token_summary_label1]
+    generation_input_params = [writer_ui["writer_pad_textbox"],shared.gradio['interface_state'], writer_ui["story_summary_textbox"], writer_ui["generation_template_dropdown"]]
+    last_input_params = [last_input,shared.gradio['interface_state'], writer_ui["story_summary_textbox"], writer_ui["generation_template_dropdown"]]
+    generation_output_params =[writer_ui["writer_pad_textbox"], writer_ui["latest_context_textbox"], writer_ui["token_summary_label1"]]
 
-    generate_btn.click(copy_string, generating_text_str, token_summary_label1).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
-        copy_string, writer_pad_textbox, last_input).then(
+    writer_ui["generate_btn"].click(copy_string, generating_text_str, writer_ui["token_summary_label1"]).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
+        copy_string, writer_ui["writer_pad_textbox"], last_input).then(
         fn=generate_reply_wrapper_enriched, inputs=generation_input_params, outputs=generation_output_params, show_progress=False).then(
-        fn=copy_prompt_analysis_output, inputs=generation_output_params, outputs=latest_context_textbox).then(
-        fn = generate_basic_html, inputs = writer_pad_textbox, outputs = writer_pad_html).then(
-        fn = convert_to_markdown, inputs = writer_pad_textbox, outputs = writer_pad_markdown).then(
-        fn = copy_string, inputs = token_summary_label1, outputs = token_summary_label2)
+        fn=copy_prompt_analysis_output, inputs=generation_output_params, outputs=writer_ui["latest_context_textbox"]).then(
+        fn = generate_basic_html, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_html"]).then(
+        fn = convert_to_markdown, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_markdown"]).then(
+        fn = copy_string, inputs = writer_ui["token_summary_label1"], outputs = writer_ui["token_summary_label2"])
     
-    writer_pad_textbox.submit(copy_string, generating_text_str, token_summary_label1).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
-        copy_string, writer_pad_textbox, last_input).then(
+    writer_ui["writer_pad_textbox"].submit(copy_string, generating_text_str, writer_ui["token_summary_label1"]).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
+        copy_string, writer_ui["writer_pad_textbox"], last_input).then(
         fn=generate_reply_wrapper_enriched, inputs=generation_input_params, outputs=generation_output_params, show_progress=False).then(
-        fn=copy_prompt_analysis_output, inputs=generation_output_params, outputs=latest_context_textbox).then(
-        fn = generate_basic_html, inputs = writer_pad_textbox, outputs = writer_pad_html).then(
-        fn = convert_to_markdown, inputs = writer_pad_textbox, outputs = writer_pad_markdown).then(
-        fn = copy_string, inputs = token_summary_label1, outputs = token_summary_label2)
+        fn=copy_prompt_analysis_output, inputs=generation_output_params, outputs=writer_ui["latest_context_textbox"]).then(
+        fn = generate_basic_html, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_html"]).then(
+        fn = convert_to_markdown, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_markdown"]).then(
+        fn = copy_string, inputs = writer_ui["token_summary_label1"], outputs = writer_ui["token_summary_label2"])
     
     #TODO Add an instruction panel
     
-    regenerate_btn.click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
+    writer_ui["regenerate_btn"].click(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
         fn=generate_reply_wrapper_enriched, inputs=last_input_params, outputs=generation_output_params, show_progress=False).then(
-        fn=copy_prompt_analysis_output, inputs=generation_output_params, outputs=latest_context_textbox).then(
-        fn = generate_basic_html, inputs = writer_pad_textbox, outputs = writer_pad_html).then(
-        fn = convert_to_markdown, inputs = writer_pad_textbox, outputs = writer_pad_markdown).then(
-        fn = copy_string, inputs = token_summary_label1, outputs = token_summary_label2)
+        fn=copy_prompt_analysis_output, inputs=generation_output_params, outputs=writer_ui["latest_context_textbox"]).then(
+        fn = generate_basic_html, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_html"]).then(
+        fn = convert_to_markdown, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_markdown"]).then(
+        fn = copy_string, inputs = writer_ui["token_summary_label1"], outputs = writer_ui["token_summary_label2"])
 
-    stop_btn.click(stop_everything_event, None, None, queue=False)
+    writer_ui["stop_btn"].click(stop_everything_event, None, None, queue=False)
 
-    processChapter_btn.click(copy_string, processing_chapter_str, token_summary_label1).then(fn=copycontent, inputs=[collate_story_enabled_checkbox, writer_pad_textbox, compiled_story_textbox, chapter_separator_textbox], outputs=compiled_story_textbox ).then(
+    writer_ui["processChapter_btn"].click(copy_string, processing_chapter_str, writer_ui["token_summary_label1"]).then(fn=copycontent, inputs=[writer_ui["collate_story_enabled_checkbox"], writer_ui["writer_pad_textbox"], writer_ui["compiled_story_textbox"], writer_ui["chapter_separator_textbox"]], outputs=writer_ui["compiled_story_textbox"] ).then(
         fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
-        fn=add_summarised_content, inputs=[writer_pad_textbox, story_summary_textbox, summarisation_template_dropdown, shared.gradio['interface_state'], summarisation_enabled_checkbox], outputs=story_summary_textbox).then(
-        fn=clear_content, inputs=[writer_pad_textbox, clear_pad_content_enabled_checkbox], outputs=writer_pad_textbox).then(
-        fn = generate_basic_html, inputs = compiled_story_textbox, outputs = compiled_story_html).then(
-        fn = convert_to_markdown, inputs = compiled_story_textbox, outputs = compiled_story_markdown).then(
-        copy_string, chapter_processed_successfully_str, token_summary_label1)
+        fn=add_summarised_content, inputs=[writer_ui["writer_pad_textbox"], writer_ui["story_summary_textbox"], writer_ui["summarisation_template_dropdown"], shared.gradio['interface_state'], writer_ui["summarisation_enabled_checkbox"]], outputs=writer_ui["story_summary_textbox"]).then(
+        fn=clear_content, inputs=[writer_ui["writer_pad_textbox"], writer_ui["clear_pad_content_enabled_checkbox"]], outputs=writer_ui["writer_pad_textbox"]).then(
+        fn = generate_basic_html, inputs = writer_ui["compiled_story_textbox"], outputs = writer_ui["compiled_story_html"]).then(
+        fn = convert_to_markdown, inputs = writer_ui["compiled_story_textbox"], outputs = writer_ui["compiled_story_markdown"]).then(
+        copy_string, chapter_processed_successfully_str, writer_ui["token_summary_label1"])
     
     summarisation_parameters['preset_menu'].change(load_preset_values, [summarisation_parameters[k] for k in ['preset_menu', 'interface_state']], [summarisation_parameters[k] for k in ['interface_state','do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
 
-    upload_session_file.upload(load_session, upload_session_file,[writer_pad_textbox, story_summary_textbox, compiled_story_textbox]).then(
-        fn = generate_basic_html, inputs = writer_pad_textbox, outputs = writer_pad_html).then(
-        fn = convert_to_markdown, inputs = writer_pad_textbox, outputs = writer_pad_markdown).then(
-        fn = generate_basic_html, inputs = compiled_story_textbox, outputs = compiled_story_html).then(
-        fn = convert_to_markdown, inputs = compiled_story_textbox, outputs = compiled_story_markdown)
+    writer_ui["upload_session_file"].upload(load_session, writer_ui["upload_session_file"],[writer_ui["writer_pad_textbox"], writer_ui["story_summary_textbox"], writer_ui["compiled_story_textbox"]]).then(
+        fn = generate_basic_html, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_html"]).then(
+        fn = convert_to_markdown, inputs = writer_ui["writer_pad_textbox"], outputs = writer_ui["writer_pad_markdown"]).then(
+        fn = generate_basic_html, inputs = writer_ui["compiled_story_textbox"], outputs = writer_ui["compiled_story_html"]).then(
+        fn = convert_to_markdown, inputs = writer_ui["compiled_story_textbox"], outputs = writer_ui["compiled_story_markdown"])
     
-    download_session_file_button.click(fn = save_session, inputs = [writer_pad_textbox, story_summary_textbox, compiled_story_textbox], outputs = download_session_file)
+    writer_ui["download_session_file_button"].click(fn = save_session, inputs = [writer_ui["writer_pad_textbox"], writer_ui["story_summary_textbox"], writer_ui["compiled_story_textbox"]], outputs = writer_ui["download_session_file"])
 
-    download_compiled_text_file_button.click(fn = save_compiled_file, inputs = [compiled_story_textbox, file_mode_txt], outputs = download_compiled_text_file)
+    writer_ui["download_compiled_text_file_button"].click(fn = save_compiled_file, inputs = [writer_ui["compiled_story_textbox"], file_mode_txt], outputs = writer_ui["download_compiled_text_file"])
 
-    download_compiled_html_file_button.click(fn = save_compiled_file, inputs = [compiled_story_html, file_mode_html], outputs = download_compiled_html_file)
+    writer_ui["download_compiled_html_file_button"].click(fn = save_compiled_file, inputs = [writer_ui["compiled_story_html"], file_mode_html], outputs = writer_ui["download_compiled_html_file"])
 
-    download_compiled_markdown_file_button.click(fn = save_compiled_file, inputs = [compiled_story_markdown, file_mode_markdown], outputs = download_compiled_markdown_file)
+    writer_ui["download_compiled_markdown_file_button"].click(fn = save_compiled_file, inputs = [writer_ui["compiled_story_markdown"], file_mode_markdown], outputs = writer_ui["download_compiled_markdown_file"])
 
 
