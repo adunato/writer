@@ -26,7 +26,7 @@ except FileNotFoundError:
         "usePR": False,
         "pUSER": 'USER:',
         "pBOT": 'ASSISTANT:',
-        "selectA": [0,0]
+        # "selectA": [0,0]
     }
 
 input_elements = ['max_new_tokens', 'seed', 'temperature', 'top_p', 'top_k', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'no_repeat_ngram_size', 'min_length', 'do_sample', 'penalty_alpha', 'num_beams', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'add_bos_token', 'ban_eos_token', 'truncation_length', 'custom_stopping_strings', 'skip_special_tokens', 'preset_menu', 'stream', 'tfs', 'top_a']
@@ -220,7 +220,7 @@ def truncate_prompt(question, prompt):
         print(f"prompt:{prompt}")
     return prompt, truncated_question
 
-def generate_reply_wrapper_enriched(question, state, selectState, summary, generation_template, eos_token=None, stopping_strings=None):
+def generate_reply_wrapper_enriched(question, state, summary, generation_template, eos_token=None, stopping_strings=None):
     prompt = generate_prompt(question, summary, generation_template)
  
     prompt, truncated_question = truncate_prompt(question, prompt)
@@ -360,7 +360,6 @@ def load_session(file):
 
     
 def ui():
-    params['selectA'] = [0,0]
     with gr.Row():
         with gr.Column():
             with gr.Row():
@@ -469,7 +468,6 @@ def ui():
                                     summarisation_parameters['truncation_length'] = gr.Slider(value=default_req_params['truncation_length'], minimum=shared.settings['truncation_length_min'], maximum=shared.settings['truncation_length_max'], step=1, label='Truncate the prompt up to this length', info='The leftmost tokens are removed if the prompt exceeds this length. Most models require this to be at most 2048.')
 
     
-    selectStateA = gr.State('selectA')
     last_input = gr.State('last_input')
     summarisation_parameters['interface_state'] = shared.gradio['interface_state']
 
@@ -482,8 +480,8 @@ def ui():
     processing_chapter_str = gr.State('ℹ Processing Chapter')
     chapter_processed_successfully_str = gr.State('✔ Chapter Processed Successfully')
 
-    input_paramsA = [text_boxA,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
-    last_input_params = [last_input,shared.gradio['interface_state'],selectStateA, text_box_StorySummary, generation_template_dropdown]
+    input_paramsA = [text_boxA,shared.gradio['interface_state'], text_box_StorySummary, generation_template_dropdown]
+    last_input_params = [last_input,shared.gradio['interface_state'], text_box_StorySummary, generation_template_dropdown]
     output_paramsA =[text_boxA, text_box_LatestContext, token_summary_label1]
 
     generate_btn.click(copy_string, generating_text_str, token_summary_label1).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
