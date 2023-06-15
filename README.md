@@ -1,17 +1,17 @@
 # Writer: An Extension for Text Generation Web UI
 ![Logo](./logo.png)
 
-Writer is an open-source AI writing application specifically designed for novel writing, it aims to explore new options for creative writing within the text generation webui framework. 
+Writer is an open-source AI writing application specifically designed for novel writing, it aims to explore new options for creative writing with large language model support.
 
 ## Key Features :key:
 
-- **Summary Support**: Write or paste a story summary in the provided editor. This will provide necessary context to the LLM, assisting in generating content more aligned with your thoughts.
+- **Summary Support**: Write or paste a story summary in the summary section. This will provide necessary context to the LLM, assisting in generating content more aligned with the story background.
 
-- **Auto-Summarisation of Chapters**: Why writing the story summary when you can have the AI doing for you? Writer auto-summarises chapters, adding incremental context to your story.
+- **Auto-Summarisation of Chapters**: Instead of writing the story summary you can have the AI doing for you. Writer auto-summarises chapters, adding incremental context to your story. This can then be edited and tweaked.
 
 - **Auto-Collation of Chapters**: Get your chapters organised automatically into a compiled story.
 
-- **Export Options**: Finished writing? Export your masterpiece to HTML, Markdown, or txt format.
+- **Export Options**: Export your finished story to HTML, Markdown, or txt format.
 
 ## Installation :cd:
 
@@ -19,13 +19,13 @@ Please follow these steps to install Writer:
 
 1. Open a bash terminal in *text-generation-webui\extensions*
 2. Type ``` git clone https://github.com/adunato/writer.git ```
-3. Restart text generation webui
+3. Restart Text Generation Web UI
 
 ## How To Use :book:
 
 ### Writer Pad :memo:
 
-The Writer Pad is your primary workspace. It functions similarly to the Notebook mode in Text Generation Web UI. Use this text box to write, edit, and generate text as per your needs. For best LLM generation, keep each paragraph under the LLM tokens limit (e.g. 2000), then hit "Process Paragraph" and start a new one with the context from the previous ones fed automatically to the LLM.
+The Writer Pad is the primary workspace. It functions similarly to the Notebook mode in Text Generation Web UI. Use this text box to write, edit, and generate text as per your needs. For best LLM generation, keep each paragraph under the LLM tokens limit (e.g. 2000), then hit "Process Paragraph" and start a new one with the context from the previous ones fed automatically to the LLM.
 
 ### Session :floppy_disk:
 
@@ -51,7 +51,7 @@ I want this app to be a sandbox for AI-assisted writing and I plan to experiment
 
 ## Contribution :handshake:
 
-We're an open-source project and we welcome contributions! Check out the [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to get started.
+Suggestions and bug reports are welcome! Feel free to create issues and submit pull requests.
 
 ## License :page_with_curl:
 
@@ -59,6 +59,4 @@ This project is licensed under the [MIT License](./LICENSE).
 
 ---
 
-Suggestions and bug reports are welcome! Feel free to create issues and submit pull requests.
-
-If any of the above sounds like a corporate sales pitch, blame Chat GPT for overdoing its "grammar checks".
+If any of the above sounds like a corporate sales pitch, blame Chat GPT for getting carried away with its "grammar checks".
