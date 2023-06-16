@@ -1,4 +1,7 @@
 from pathlib import Path
+from modules import shared,ui,utils
+from .writer_params import input_elements
+
 def copycontent(enabled, new_input, existing_text, chapter_separator):
     if(enabled == False):
         return
@@ -22,3 +25,22 @@ def get_matching_file_path(filename):
             return str(path)
     return ""
 
+def copy_prompt_analysis_output(text_boxA, prompt_analysis, token_count):
+    return prompt_analysis
+
+def copy_args(*args):
+    return args
+
+def copy_string(string):
+    return string
+
+def get_available_templates():
+    paths = (x for x in Path('extensions/writer/templates').iterdir() if x.suffix in ('.txt'))
+    return ['None'] + sorted(set((k.stem for k in paths)), key=utils.natural_keys)
+
+def gather_interface_values(*args):
+    output = {}
+    for i, element in enumerate(input_elements):
+        output[element] = args[i]
+
+    return output

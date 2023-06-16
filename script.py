@@ -8,9 +8,9 @@ from modules.text_generation import stop_everything_event
 from modules import shared,ui,utils
 import modules.ui as modules_ui
 from modules.html_generator import generate_basic_html, convert_to_markdown
-from .writer_utils import copycontent, copy_string
+from .writer_utils import copycontent, copy_string, copy_prompt_analysis_output, copy_args, copy_string, get_available_templates, gather_interface_values
 from .writer_params import input_elements, default_req_params, summarisation_parameters, writer_ui
-from .writer_session import load_session, save_session
+from .writer_io import load_session, save_session
 from .writer_summarise import add_summarised_content
 from .writer_format_utils import tag_prompt_elements, format_token_count, generate_token_report, formatted_outputs, clear_content
 from .writer_prompt import generate_prompt, truncate_prompt, generate_reply_wrapper_enriched, get_max_prompt_tokens, truncate_tokens
@@ -31,28 +31,6 @@ except FileNotFoundError:
 text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.')
 
 
-
-
-
-def copy_prompt_analysis_output(text_boxA, prompt_analysis, token_count):
-    return prompt_analysis
-
-def copy_args(*args):
-    return args
-
-def copy_string(string):
-    return string
-
-def get_available_templates():
-    paths = (x for x in Path('extensions/writer/templates').iterdir() if x.suffix in ('.txt'))
-    return ['None'] + sorted(set((k.stem for k in paths)), key=utils.natural_keys)
-
-def gather_interface_values(*args):
-    output = {}
-    for i, element in enumerate(input_elements):
-        output[element] = args[i]
-
-    return output
 
 def load_preset_values(preset_menu, state, return_dict=False):
     generate_params = {
