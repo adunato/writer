@@ -38,7 +38,7 @@ def tag_prompt_elements(template_content, summary, question):
 
     return output_spans, length_summary
 
-def format_token_count(token_count):
+def _format_token_count(token_count):
     summary_strs = ["**Token Count Summary**"]
     for key, value in token_count.items():
         summary_strs.append(f"{key.capitalize()}: {value}")
@@ -67,5 +67,5 @@ def clear_content(string, clear_pad_content_enabled):
         return string
 
 def formatted_outputs(reply, prompt_analysis, token_count):
-    return reply, prompt_analysis, format_token_count(token_count)
+    return reply, prompt_analysis, _format_token_count(token_count)
 

@@ -36,4 +36,4 @@ default_req_params = {
 
 summarisation_parameters = {}
 
-writer_ui = {}
+writer_ui_elements = {}

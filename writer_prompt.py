@@ -17,19 +17,19 @@ def generate_prompt(question, summary, generation_template):
         prompt = question
     return prompt
 
-def truncate_prompt(question, prompt):
+def _truncate_prompt(question, prompt):
     # Calculate the total number of tokens in the prompt
     total_prompt_tokens = get_encoded_length(prompt)
     print(f"total_prompt_tokens:{total_prompt_tokens}")
     # Check if the total number of tokens exceeds the maximum allowable tokens
-    max_prompt_tokens = get_max_prompt_tokens()
+    max_prompt_tokens = _get_max_prompt_tokens()
     print(f"max_prompt_tokens:{max_prompt_tokens}")
     truncated_question = question
     if total_prompt_tokens > max_prompt_tokens:
         # If the total number of tokens is greater than the max allowable tokens,
         # truncate the question from the beginning by the excess number of tokens
         excess_tokens = total_prompt_tokens - max_prompt_tokens
-        truncated_question = truncate_tokens(question, excess_tokens)
+        truncated_question = _truncate_tokens(question, excess_tokens)
         prompt = prompt.replace(question, truncated_question) # replace old question with truncated one   
         print(f"truncated_question:{truncated_question}")
         print(f"prompt:{prompt}")
@@ -38,7 +38,7 @@ def truncate_prompt(question, prompt):
 def generate_reply_wrapper_enriched(question, state, summary, generation_template, eos_token=None, stopping_strings=None):
     prompt = generate_prompt(question, summary, generation_template)
  
-    prompt, truncated_question = truncate_prompt(question, prompt)
+    prompt, truncated_question = _truncate_prompt(question, prompt)
 
     token_count, output_spans = generate_token_report(truncated_question, summary, generation_template)
 
@@ -49,10 +49,10 @@ def generate_reply_wrapper_enriched(question, state, summary, generation_templat
 
 
 
-def get_max_prompt_tokens():
+def _get_max_prompt_tokens():
     return shared.settings['max_new_tokens_max'] - shared.gradio['max_new_tokens'].value
 
-def truncate_tokens(text, excess_tokens):
+def _truncate_tokens(text, excess_tokens):
     words = text.split()
     total_tokens = get_encoded_length(text)
     

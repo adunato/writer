@@ -31,9 +31,6 @@ def copy_prompt_analysis_output(text_boxA, prompt_analysis, token_count):
 def copy_args(*args):
     return args
 
-def copy_string(string):
-    return string
-
 def get_available_templates():
     paths = (x for x in Path('extensions/writer/templates').iterdir() if x.suffix in ('.txt'))
     return ['None'] + sorted(set((k.stem for k in paths)), key=utils.natural_keys)
