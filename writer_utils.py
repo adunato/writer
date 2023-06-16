@@ -1,5 +1,5 @@
 from pathlib import Path
-from modules import shared,ui,utils
+from modules import utils
 from .writer_params import input_elements
 
 def copycontent(enabled, new_input, existing_text, chapter_separator):

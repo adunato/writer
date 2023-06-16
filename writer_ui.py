@@ -1,5 +1,5 @@
 import gradio as gr
-from modules import shared,ui,utils
+from modules import shared, utils
 import modules.ui as modules_ui
 from modules.html_generator import generate_basic_html, convert_to_markdown
 from modules.text_generation import stop_everything_event
