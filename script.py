@@ -9,12 +9,13 @@ from modules.text_generation import encode, get_max_prompt_length
 from modules.text_generation import generate_reply
 from modules.text_generation import generate_reply_wrapper
 from modules.text_generation import stop_everything_event, get_encoded_length
+from modules import shared,ui,utils
 import modules.ui as modules_ui
-from .writer_utils import copycontent, copy_string
+from modules.html_generator import generate_basic_html, convert_to_markdown
+from .writer_utils import copycontent, copy_string, get_matching_file_path, read_file_to_string
 from .writer_params import input_elements, default_req_params, summarisation_parameters, writer_ui
 from .writer_session import load_session, save_session
-from modules import shared,ui,utils
-from modules.html_generator import generate_basic_html, convert_to_markdown
+from .writer_summarise import add_summarised_content
 
 try:
     with open('notebook.sav', 'rb') as f:
@@ -31,46 +32,6 @@ except FileNotFoundError:
 
 text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.')
 
-def summarise_content(content, summarisation_template, state):
-    summarisation_file = get_matching_file_path(summarisation_template)
-    if(summarisation_file == ""):
-        print(f"No teplate file found for {summarisation_template}")
-        return ""
-    instruction = read_file_to_string(summarisation_file)
-    instruction = instruction.replace("{content}", content)
-
-    outputcontent = ""
-
-    for result in generate_reply_wrapper(instruction, state):
-        outputcontent += result[0]
-
-    outputcontent = outputcontent.replace(instruction, "")
-
-    return outputcontent
-
-def read_file_to_string(file_path):
-    with open(file_path, 'r') as file:
-        data = file.read()
-    return data
-
-def get_matching_file_path(filename):
-    paths = (x for x in Path('extensions/writer/templates').iterdir() if x.suffix in ('.txt'))
-    for path in paths:
-        if path.stem == filename:
-            return str(path)
-    return ""
-
-def add_summarised_content(content, text_box, summarisation_template, state, summarisation_enabled, replace=False, add_cr=True):
-    if(summarisation_enabled == False):
-        return ""
-    summarised_content = summarise_content(content, summarisation_template, state)
-    if(replace):
-        text_box = summarised_content
-    else:
-        text_box += summarised_content
-    if(add_cr):
-        text_box+="\n\n"
-    return text_box
 
 def clear_content(string, clear_pad_content_enabled):
     if(clear_pad_content_enabled):
