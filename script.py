@@ -394,9 +394,9 @@ def ui():
                     with gr.Tab('Text'):
                         writer_ui["compiled_story_textbox"] = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
                     with gr.Tab('HTML'):
-                        writer_ui["compiled_story_html"] = gr.HTML(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        writer_ui["compiled_story_html"] = gr.HTML(value='', label = 'Compiled Story')
                     with gr.Tab('Markdown'):
-                        writer_ui["compiled_story_markdown"] = gr.Markdown(value='', elem_classes="textbox", lines=20, label = 'Compiled Story')
+                        writer_ui["compiled_story_markdown"] = gr.Markdown(value='', label = 'Compiled Story')
                 with gr.Accordion('Download Compiled Story', open=False):
                     with gr.Row():
                         with gr.Column():
@@ -417,7 +417,7 @@ def ui():
                         writer_ui["story_summary_textbox"] = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Story Summary')
                     with gr.Tab('Latest Context'):
                         writer_ui["token_summary_label2"] = gr.Markdown(value = '')
-                        writer_ui["latest_context_textbox"] = gr.HighlightedText(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.').style(color_map={"background": "red", "user_input": "green", "template": "blue"})
+                        writer_ui["latest_context_textbox"] = gr.HighlightedText(value='', label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.').style(color_map={"background": "red", "user_input": "green", "template": "blue"})
             with gr.Accordion('Settings', open=False):
                 with gr.Row():
                     with gr.Tab('General Settings'):
@@ -534,5 +534,3 @@ def ui():
     writer_ui["download_compiled_html_file_button"].click(fn = save_compiled_file, inputs = [writer_ui["compiled_story_html"], file_mode_html], outputs = writer_ui["download_compiled_html_file"])
 
     writer_ui["download_compiled_markdown_file_button"].click(fn = save_compiled_file, inputs = [writer_ui["compiled_story_markdown"], file_mode_markdown], outputs = writer_ui["download_compiled_markdown_file"])
-
-
