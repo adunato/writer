@@ -4,18 +4,16 @@ import modules.shared as shared
 from pathlib import Path
 import yaml
 from datetime import datetime
-from modules.extensions import apply_extensions
-from modules.text_generation import encode, get_max_prompt_length
-from modules.text_generation import generate_reply
-from modules.text_generation import generate_reply_wrapper
-from modules.text_generation import stop_everything_event, get_encoded_length
+from modules.text_generation import stop_everything_event
 from modules import shared,ui,utils
 import modules.ui as modules_ui
 from modules.html_generator import generate_basic_html, convert_to_markdown
-from .writer_utils import copycontent, copy_string, get_matching_file_path, read_file_to_string
+from .writer_utils import copycontent, copy_string
 from .writer_params import input_elements, default_req_params, summarisation_parameters, writer_ui
 from .writer_session import load_session, save_session
 from .writer_summarise import add_summarised_content
+from .writer_format_utils import tag_prompt_elements, format_token_count, generate_token_report, formatted_outputs, clear_content
+from .writer_prompt import generate_prompt, truncate_prompt, generate_reply_wrapper_enriched, get_max_prompt_tokens, truncate_tokens
 
 try:
     with open('notebook.sav', 'rb') as f:
@@ -33,140 +31,8 @@ except FileNotFoundError:
 text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.')
 
 
-def clear_content(string, clear_pad_content_enabled):
-    if(clear_pad_content_enabled):
-        return ""
-    else:
-        return string
-
-def formatted_outputs(reply, prompt_analysis, token_count):
-    return reply, prompt_analysis, format_token_count(token_count)
-
-def tag_prompt_elements(template_content, summary, question):
-    output_spans = []
-    length_summary = {"template": 0, "background": 0, "user_input": 0}
-
-    if "{summary}" in template_content and "{question}" in template_content:
-        split_template = template_content.split("{summary}")
-        length_summary["template"] += get_encoded_length(split_template[0].strip())
-        output_spans.append(("template", split_template[0].strip()))
-
-        second_half_split = split_template[1].split("{question}")
-        length_summary["background"] += get_encoded_length(summary)
-        output_spans.append(("background", summary))
-        length_summary["template"] += get_encoded_length(second_half_split[0].strip())
-        output_spans.append(("template", second_half_split[0].strip()))
-        length_summary["user_input"] += get_encoded_length(question)
-        output_spans.append(("user_input", question))
-        
-    elif "{summary}" in template_content:
-        split_template = template_content.split("{summary}")
-        length_summary["template"] += get_encoded_length(split_template[0].strip())
-        output_spans.append(("template", split_template[0].strip()))
-        length_summary["background"] += get_encoded_length(summary)
-        output_spans.append(("background", summary))
-    elif "{question}" in template_content:
-        split_template = template_content.split("{question}")
-        length_summary["template"] += get_encoded_length(split_template[0].strip())
-        output_spans.append(("template", split_template[0].strip()))
-        length_summary["user_input"] += get_encoded_length(question)
-        output_spans.append(("user_input", question))
-    else:
-        length_summary["user_input"] += get_encoded_length(question)
-        output_spans.append(("user_input", question))
-
-    length_summary["total"] = sum(length_summary.values())
-
-    return output_spans, length_summary
-
-def format_token_count(token_count):
-    summary_strs = ["**Token Count Summary**"]
-    for key, value in token_count.items():
-        summary_strs.append(f"{key.capitalize()}: {value}")
-    return ', '.join(summary_strs)
-
-def generate_prompt(question, summary, generation_template):
-    if(summary != ""):
-        template_file = get_matching_file_path(generation_template)
-        if(template_file == ""):
-            print(f"No template file found for {generation_template}")
-            return ""
-        prompt = read_file_to_string(template_file)
-        prompt = prompt.replace("{summary}", summary)
-        prompt = prompt.replace("{question}", question)
-    else:
-        prompt = question
-    return prompt
-
-def generate_token_report(question, summary, generation_template):
-    token_count = {}
-    if(summary != ""):
-        template_file = get_matching_file_path(generation_template)
-        if(template_file == ""):
-            print(f"No template file found for {generation_template}")
-            return ""
-        template_content = read_file_to_string(template_file)
-        [output_spans, token_count] = tag_prompt_elements(template_content, summary, question)
-    else:
-        output_spans = [("user_input", question)]
-        #token_count = {"total" : 0}
-        token_count["total"] = get_encoded_length(question)
-    
-    return token_count, output_spans    
-
-def truncate_prompt(question, prompt):
-    # Calculate the total number of tokens in the prompt
-    total_prompt_tokens = get_encoded_length(prompt)
-    print(f"total_prompt_tokens:{total_prompt_tokens}")
-    # Check if the total number of tokens exceeds the maximum allowable tokens
-    max_prompt_tokens = get_max_prompt_tokens()
-    print(f"max_prompt_tokens:{max_prompt_tokens}")
-    truncated_question = question
-    if total_prompt_tokens > max_prompt_tokens:
-        # If the total number of tokens is greater than the max allowable tokens,
-        # truncate the question from the beginning by the excess number of tokens
-        excess_tokens = total_prompt_tokens - max_prompt_tokens
-        truncated_question = truncate_tokens(question, excess_tokens)
-        prompt = prompt.replace(question, truncated_question) # replace old question with truncated one   
-        print(f"truncated_question:{truncated_question}")
-        print(f"prompt:{prompt}")
-    return prompt, truncated_question
-
-def generate_reply_wrapper_enriched(question, state, summary, generation_template, eos_token=None, stopping_strings=None):
-    prompt = generate_prompt(question, summary, generation_template)
- 
-    prompt, truncated_question = truncate_prompt(question, prompt)
-
-    token_count, output_spans = generate_token_report(truncated_question, summary, generation_template)
-
-    for reply in generate_reply(prompt, state, eos_token, stopping_strings, is_chat=False):
-        if shared.model_type not in ['HF_seq2seq']:
-            reply = question + reply
-        yield formatted_outputs(reply, output_spans, token_count)
 
 
-
-def get_max_prompt_tokens():
-    return shared.settings['max_new_tokens_max'] - shared.gradio['max_new_tokens'].value
-
-def truncate_tokens(text, excess_tokens):
-    words = text.split()
-    total_tokens = get_encoded_length(text)
-    
-    # Estimate average tokens per word
-    avg_tokens_per_word = total_tokens / len(words)
-    
-    # Estimate the number of words to remove
-    estimated_words_to_remove = int(excess_tokens / avg_tokens_per_word)
-    
-    # Remove estimated number of words
-    words = words[estimated_words_to_remove:]
-    
-    # Fine-tune by removing extra words if necessary
-    while get_encoded_length(' '.join(words)) > excess_tokens:
-        words = words[1:]
-
-    return ' '.join(words)
 
 def copy_prompt_analysis_output(text_boxA, prompt_analysis, token_count):
     return prompt_analysis
