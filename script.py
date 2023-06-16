@@ -2,7 +2,6 @@ import gradio as gr
 import pickle
 import modules.shared as shared
 from pathlib import Path
-import yaml
 from datetime import datetime
 from modules.text_generation import stop_everything_event
 from modules import shared,ui,utils
@@ -10,7 +9,7 @@ import modules.ui as modules_ui
 from modules.html_generator import generate_basic_html, convert_to_markdown
 from .writer_utils import copycontent, copy_string, copy_prompt_analysis_output, copy_args, copy_string, get_available_templates, gather_interface_values
 from .writer_params import input_elements, default_req_params, summarisation_parameters, writer_ui
-from .writer_io import load_session, save_session
+from .writer_io import load_session, save_session, load_preset_values, save_compiled_file
 from .writer_summarise import add_summarised_content
 from .writer_format_utils import tag_prompt_elements, format_token_count, generate_token_report, formatted_outputs, clear_content
 from .writer_prompt import generate_prompt, truncate_prompt, generate_reply_wrapper_enriched, get_max_prompt_tokens, truncate_tokens
@@ -32,62 +31,6 @@ text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, 
 
 
 
-def load_preset_values(preset_menu, state, return_dict=False):
-    generate_params = {
-        'do_sample': True,
-        'temperature': 1,
-        'top_p': 1,
-        'typical_p': 1,
-        'epsilon_cutoff': 0,
-        'eta_cutoff': 0,
-        'tfs': 1,
-        'top_a': 0,
-        'repetition_penalty': 1,
-        'encoder_repetition_penalty': 1,
-        'top_k': 0,
-        'num_beams': 1,
-        'penalty_alpha': 0,
-        'min_length': 0,
-        'length_penalty': 1,
-        'no_repeat_ngram_size': 0,
-        'early_stopping': False,
-        'mirostat_mode': 0,
-        'mirostat_tau': 5.0,
-        'mirostat_eta': 0.1,
-    }
-
-    with open(Path(f'presets/{preset_menu}.yaml'), 'r') as infile:
-        print(f"infile: {infile}")
-        preset = yaml.safe_load(infile)
-        print(f"preset: {preset}")
-
-    for k in preset:
-        print(f"Updating param {k}: from {generate_params[k]} to {preset[k]}")
-        generate_params[k] = preset[k]
-
-    generate_params['temperature'] = min(1.99, generate_params['temperature'])
-    if return_dict:
-        return generate_params
-    else:
-        state.update(generate_params)
-        print(f"state: {state}")
-        print(f"generate_params: {generate_params}")
-        return state, *[generate_params[k] for k in ['do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']]
-    
-
-def save_compiled_file(compiled_story_text, file_mode, timestamp=False):
-    if timestamp:
-        fname = f"compiled_story_{datetime.now().strftime('%Y%m%d-%H%M%S')}.{file_mode}"
-    else:
-        fname = f"compiled_story_persistent.{file_mode}"
-
-    if not Path('logs').exists():
-        Path('logs').mkdir()
-
-    with open(Path(f'logs/{fname}'), 'w', encoding='utf-8') as f:
-        f.write(compiled_story_text)
-
-    return Path(f'logs/{fname}')
 
 
     
