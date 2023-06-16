@@ -1,20 +1,20 @@
 import gradio as gr
 import pickle
 import modules.shared as shared
+from pathlib import Path
+import yaml
+from datetime import datetime
 from modules.extensions import apply_extensions
 from modules.text_generation import encode, get_max_prompt_length
 from modules.text_generation import generate_reply
 from modules.text_generation import generate_reply_wrapper
 from modules.text_generation import stop_everything_event, get_encoded_length
-# from modules.ui import create_refresh_button
-# from modules.ui import gather_interface_values
 import modules.ui as modules_ui
+from .writer_utils import copycontent, copy_string
+from .writer_params import input_elements, default_req_params, summarisation_parameters, writer_ui
+from .writer_session import load_session, save_session
 from modules import shared,ui,utils
 from modules.html_generator import generate_basic_html, convert_to_markdown
-from pathlib import Path
-import yaml
-from datetime import datetime
-import json
 
 try:
     with open('notebook.sav', 'rb') as f:
@@ -28,56 +28,6 @@ except FileNotFoundError:
         "pBOT": 'ASSISTANT:',
         # "selectA": [0,0]
     }
-
-input_elements = ['max_new_tokens', 'seed', 'temperature', 'top_p', 'top_k', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'no_repeat_ngram_size', 'min_length', 'do_sample', 'penalty_alpha', 'num_beams', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'add_bos_token', 'ban_eos_token', 'truncation_length', 'custom_stopping_strings', 'skip_special_tokens', 'preset_menu', 'stream', 'tfs', 'top_a']
-
-def copycontent(enabled, new_input, existing_text, chapter_separator):
-    if(enabled == False):
-        return
-    if(chapter_separator != ""):
-        return existing_text+new_input+chapter_separator
-    else:
-        return existing_text+new_input
-    
-def copy_string(string):
-    return string
-
-default_req_params = {
-    'max_new_tokens': 200,
-    'temperature': 0.7,
-    'top_p': 0.1,
-    'top_k': 40,
-    'repetition_penalty': 1.18,
-    'encoder_repetition_penalty': 1.0,
-    'suffix': None,
-    'stream': False,
-    'echo': False,
-    'seed': -1,
-    # 'n' : default(body, 'n', 1),  # 'n' doesn't have a direct map
-    'truncation_length': 2048,
-    'add_bos_token': True,
-    'do_sample': True,
-    'typical_p': 1.0,
-    'epsilon_cutoff': 0,  # In units of 1e-4
-    'eta_cutoff': 0,  # In units of 1e-4
-    'tfs': 1.0,
-    'top_a': 0.0,
-    'min_length': 0,
-    'no_repeat_ngram_size': 0,
-    'num_beams': 1,
-    'penalty_alpha': 0.0,
-    'length_penalty': 1,
-    'early_stopping': False,
-    'mirostat_mode': 0,
-    'mirostat_tau': 5,
-    'mirostat_eta': 0.1,
-    'ban_eos_token': False,
-    'skip_special_tokens': True,
-    'custom_stopping_strings': [],
-}
-
-summarisation_parameters = {}
-writer_ui = {}
 
 text_box_LatestContext = gr.Textbox(value='', elem_classes="textbox", lines=20, label = 'Latest Context', info='This is the last context sent to the LLM as input for generation.')
 
@@ -319,19 +269,6 @@ def load_preset_values(preset_menu, state, return_dict=False):
         print(f"generate_params: {generate_params}")
         return state, *[generate_params[k] for k in ['do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']]
     
-def save_session(writer_text_box, summary_text_box, compiled_story_text_box, timestamp=False):
-    if timestamp:
-        fname = f"session_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-    else:
-        fname = f"session_persistent.json"
-
-    if not Path('logs').exists():
-        Path('logs').mkdir()
-
-    with open(Path(f'logs/{fname}'), 'w', encoding='utf-8') as f:
-        f.write(json.dumps({'writer_text_box': writer_text_box, 'summary_text_box' : summary_text_box, 'compiled_story_text_box' : compiled_story_text_box}, indent=2))
-
-    return Path(f'logs/{fname}')
 
 def save_compiled_file(compiled_story_text, file_mode, timestamp=False):
     if timestamp:
@@ -347,17 +284,6 @@ def save_compiled_file(compiled_story_text, file_mode, timestamp=False):
 
     return Path(f'logs/{fname}')
 
-
-def load_session(file):
-    file = file.decode('utf-8')
-    j = json.loads(file)
-    if 'writer_text_box' in j:
-        writer_text_box = j['writer_text_box']
-    if 'summary_text_box' in j:
-        summary_text_box = j['summary_text_box']
-    if 'compiled_story_text_box' in j:
-        compiled_story_text_box = j['compiled_story_text_box']
-    return writer_text_box, summary_text_box, compiled_story_text_box
 
     
 def ui():
