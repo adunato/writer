@@ -75,6 +75,7 @@ def generate_gradio_ui():
                             writer_ui_elements["summarisation_enabled_checkbox"] = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
                             writer_ui_elements["clear_pad_content_enabled_checkbox"] = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
                             writer_ui_elements["collate_story_enabled_checkbox"] = gr.Checkbox(value=True, label='Collate story', info='Content from writer pad is collated into the story tab')
+                            writer_ui_elements["use_langchain_summarisation"] = gr.Checkbox(value=True, label='Enable auto sumarisation using Langchain', info='Uses Langchain instead of custom summarisation module')
                             writer_ui_elements["chapter_separator_textbox"] = gr.Textbox(value='\n*********\n', elem_classes="textbox", lines=1, label = 'Chapter Separator', info = 'Adds a separator after each chapter has been processed in the collated story')
                         with gr.Row():
                             writer_ui_elements["summarisation_template_dropdown"] = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
@@ -163,7 +164,7 @@ def generate_button_callbacks():
 
     writer_ui_elements["processChapter_btn"].click(copy_string, processing_chapter_str, writer_ui_elements["token_summary_label1"]).then(fn=copycontent, inputs=[writer_ui_elements["collate_story_enabled_checkbox"], writer_ui_elements["writer_pad_textbox"], writer_ui_elements["compiled_story_textbox"], writer_ui_elements["chapter_separator_textbox"]], outputs=writer_ui_elements["compiled_story_textbox"] ).then(
         fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
-        fn=add_summarised_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_elements["summarisation_template_dropdown"], shared.gradio['interface_state'], writer_ui_elements["summarisation_enabled_checkbox"]], outputs=writer_ui_elements["story_summary_textbox"]).then(
+        fn=add_summarised_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_elements["summarisation_template_dropdown"], writer_ui_elements["story_summary_textbox"], summarisation_parameters['interface_state'], writer_ui_elements["use_langchain_summarisation"], writer_ui_elements["summarisation_enabled_checkbox"]], outputs=writer_ui_elements["story_summary_textbox"]).then(
         fn=clear_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["clear_pad_content_enabled_checkbox"]], outputs=writer_ui_elements["writer_pad_textbox"]).then(
         fn = generate_basic_html, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_html"]).then(
         fn = convert_to_markdown, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_markdown"]).then(
