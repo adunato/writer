@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 import yaml
 
-def save_session(writer_text_box, summary_text_box, compiled_story_text_box, timestamp=False):
+def save_session(writer_text_box, summary_text_box, compiled_story_text_box,summarisation_enabled_checkbox,clear_pad_content_enabled_checkbox,collate_story_enabled_checkbox,use_langchain_summarisation,chapter_separator_textbox,summarisation_template_dropdown, generation_template_dropdown, timestamp=False):
     if timestamp:
         fname = f"session_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
     else:
@@ -13,7 +13,17 @@ def save_session(writer_text_box, summary_text_box, compiled_story_text_box, tim
         Path('logs').mkdir()
 
     with open(Path(f'logs/{fname}'), 'w', encoding='utf-8') as f:
-        f.write(json.dumps({'writer_text_box': writer_text_box, 'summary_text_box' : summary_text_box, 'compiled_story_text_box' : compiled_story_text_box}, indent=2))
+        f.write(json.dumps({'writer_text_box': writer_text_box, 
+                            'summary_text_box' : summary_text_box, 
+                            'compiled_story_text_box' : compiled_story_text_box, 
+                            'summarisation_enabled_checkbox' : summarisation_enabled_checkbox,
+                            'clear_pad_content_enabled_checkbox' : clear_pad_content_enabled_checkbox,
+                            'collate_story_enabled_checkbox' : collate_story_enabled_checkbox,
+                            'use_langchain_summarisation' : use_langchain_summarisation,
+                            'chapter_separator_textbox' : chapter_separator_textbox,
+                            'summarisation_template_dropdown' : summarisation_template_dropdown,
+                            'generation_template_dropdown' : generation_template_dropdown
+                            }, indent=2))
 
     return Path(f'logs/{fname}')
 
@@ -27,7 +37,22 @@ def load_session(file):
         summary_text_box = j['summary_text_box']
     if 'compiled_story_text_box' in j:
         compiled_story_text_box = j['compiled_story_text_box']
-    return writer_text_box, summary_text_box, compiled_story_text_box
+    if 'summarisation_enabled_checkbox' in j:
+        summarisation_enabled_checkbox = j['summarisation_enabled_checkbox']
+    if 'clear_pad_content_enabled_checkbox' in j:
+        clear_pad_content_enabled_checkbox = j['clear_pad_content_enabled_checkbox']
+    if 'collate_story_enabled_checkbox' in j:
+        collate_story_enabled_checkbox = j['collate_story_enabled_checkbox']
+    if 'use_langchain_summarisation' in j:
+        use_langchain_summarisation = j['use_langchain_summarisation']
+    if 'chapter_separator_textbox' in j:
+        chapter_separator_textbox = j['chapter_separator_textbox']
+    if 'summarisation_template_dropdown' in j:
+        summarisation_template_dropdown = j['summarisation_template_dropdown']
+    if 'generation_template_dropdown' in j:
+        generation_template_dropdown = j['generation_template_dropdown']
+    
+    return writer_text_box, summary_text_box, compiled_story_text_box,summarisation_enabled_checkbox,clear_pad_content_enabled_checkbox,collate_story_enabled_checkbox,use_langchain_summarisation,chapter_separator_textbox, summarisation_template_dropdown, generation_template_dropdown
 
 def load_preset_values(preset_menu, state, return_dict=False):
     generate_params = {

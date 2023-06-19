@@ -3,7 +3,7 @@ from modules import shared, utils
 import modules.ui as modules_ui
 from modules.html_generator import generate_basic_html, convert_to_markdown
 from modules.text_generation import stop_everything_event
-from .writer_params import writer_ui_elements, summarisation_parameters, default_req_params, input_elements
+from .writer_params import writer_ui_elements, summarisation_parameters, default_req_params, input_elements, writer_ui_general_settings
 from .writer_utils import get_available_templates, copy_string, copy_prompt_analysis_output, gather_interface_values, copycontent
 from .writer_prompt import generate_reply_wrapper_enriched
 from .writer_io import save_compiled_file, load_preset_values, load_session, save_session
@@ -72,16 +72,16 @@ def generate_gradio_ui():
                 with gr.Row():
                     with gr.Tab('General Settings'):
                         with gr.Row():
-                            writer_ui_elements["summarisation_enabled_checkbox"] = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
-                            writer_ui_elements["clear_pad_content_enabled_checkbox"] = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
-                            writer_ui_elements["collate_story_enabled_checkbox"] = gr.Checkbox(value=True, label='Collate story', info='Content from writer pad is collated into the story tab')
-                            writer_ui_elements["use_langchain_summarisation"] = gr.Checkbox(value=True, label='Enable auto sumarisation using Langchain', info='Uses Langchain instead of custom summarisation module')
-                            writer_ui_elements["chapter_separator_textbox"] = gr.Textbox(value='\n*********\n', elem_classes="textbox", lines=1, label = 'Chapter Separator', info = 'Adds a separator after each chapter has been processed in the collated story')
+                            writer_ui_general_settings["summarisation_enabled_checkbox"] = gr.Checkbox(value=True, label='Enable auto sumarisation', info='Enables auto sumarisation when chapter is processed')
+                            writer_ui_general_settings["clear_pad_content_enabled_checkbox"] = gr.Checkbox(value=True, label='Clear current content', info='Content from writer pad is cleared when chapter is processed')
+                            writer_ui_general_settings["collate_story_enabled_checkbox"] = gr.Checkbox(value=True, label='Collate story', info='Content from writer pad is collated into the story tab')
+                            writer_ui_general_settings["use_langchain_summarisation"] = gr.Checkbox(value=True, label='Enable auto sumarisation using Langchain', info='Uses Langchain instead of custom summarisation module')
+                            writer_ui_general_settings["chapter_separator_textbox"] = gr.Textbox(value='\n*********\n', elem_classes="textbox", lines=1, label = 'Chapter Separator', info = 'Adds a separator after each chapter has been processed in the collated story')
                         with gr.Row():
-                            writer_ui_elements["summarisation_template_dropdown"] = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
-                            modules_ui.create_refresh_button(writer_ui_elements["summarisation_template_dropdown"], lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
-                            writer_ui_elements["generation_template_dropdown"] = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
-                            modules_ui.create_refresh_button(writer_ui_elements["generation_template_dropdown"], lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                            writer_ui_general_settings["summarisation_template_dropdown"] = gr.Dropdown(choices=get_available_templates(), label='Summarisation Template', elem_id='character-menu', info='Used to summarise the story text.', value='summarisation')
+                            modules_ui.create_refresh_button(writer_ui_general_settings["summarisation_template_dropdown"], lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
+                            writer_ui_general_settings["generation_template_dropdown"] = gr.Dropdown(choices=get_available_templates(), label='Generation Template', elem_id='character-menu', info='Used to generate the story.', value='generation')
+                            modules_ui.create_refresh_button(writer_ui_general_settings["generation_template_dropdown"], lambda: None, lambda: {'choices': get_available_templates()}, 'refresh-button')
                     with gr.Tab('Summarisation parameters'):
                         with gr.Box():
                             gr.Markdown('Summarisation parameters')
@@ -131,8 +131,8 @@ def generate_button_callbacks():
     processing_chapter_str = gr.State('ℹ Processing Chapter')
     chapter_processed_successfully_str = gr.State('✔ Chapter Processed Successfully')
 
-    generation_input_params = [writer_ui_elements["writer_pad_textbox"],shared.gradio['interface_state'], writer_ui_elements["story_summary_textbox"], writer_ui_elements["generation_template_dropdown"]]
-    last_input_params = [last_input,shared.gradio['interface_state'], writer_ui_elements["story_summary_textbox"], writer_ui_elements["generation_template_dropdown"]]
+    generation_input_params = [writer_ui_elements["writer_pad_textbox"],shared.gradio['interface_state'], writer_ui_elements["story_summary_textbox"], writer_ui_general_settings["generation_template_dropdown"]]
+    last_input_params = [last_input,shared.gradio['interface_state'], writer_ui_elements["story_summary_textbox"], writer_ui_general_settings["generation_template_dropdown"]]
     generation_output_params =[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["latest_context_textbox"], writer_ui_elements["token_summary_label1"]]
 
     writer_ui_elements["generate_btn"].click(copy_string, generating_text_str, writer_ui_elements["token_summary_label1"]).then(fn = modules_ui.gather_interface_values, inputs= [shared.gradio[k] for k in shared.input_elements], outputs = shared.gradio['interface_state']).then(
@@ -162,23 +162,32 @@ def generate_button_callbacks():
 
     writer_ui_elements["stop_btn"].click(stop_everything_event, None, None, queue=False)
 
-    writer_ui_elements["processChapter_btn"].click(copy_string, processing_chapter_str, writer_ui_elements["token_summary_label1"]).then(fn=copycontent, inputs=[writer_ui_elements["collate_story_enabled_checkbox"], writer_ui_elements["writer_pad_textbox"], writer_ui_elements["compiled_story_textbox"], writer_ui_elements["chapter_separator_textbox"]], outputs=writer_ui_elements["compiled_story_textbox"] ).then(
+    writer_ui_elements["processChapter_btn"].click(copy_string, processing_chapter_str, writer_ui_elements["token_summary_label1"]).then(fn=copycontent, inputs=[writer_ui_general_settings["collate_story_enabled_checkbox"], writer_ui_elements["writer_pad_textbox"], writer_ui_elements["compiled_story_textbox"], writer_ui_general_settings["chapter_separator_textbox"]], outputs=writer_ui_elements["compiled_story_textbox"] ).then(
         fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
-        fn=add_summarised_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_elements["summarisation_template_dropdown"], writer_ui_elements["story_summary_textbox"], summarisation_parameters['interface_state'], writer_ui_elements["use_langchain_summarisation"], writer_ui_elements["summarisation_enabled_checkbox"]], outputs=writer_ui_elements["story_summary_textbox"]).then(
-        fn=clear_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["clear_pad_content_enabled_checkbox"]], outputs=writer_ui_elements["writer_pad_textbox"]).then(
+        fn=add_summarised_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_general_settings["summarisation_template_dropdown"], writer_ui_elements["story_summary_textbox"], summarisation_parameters['interface_state'], writer_ui_general_settings["use_langchain_summarisation"], writer_ui_general_settings["summarisation_enabled_checkbox"]], outputs=writer_ui_elements["story_summary_textbox"]).then(
+        fn=clear_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_general_settings["clear_pad_content_enabled_checkbox"]], outputs=writer_ui_elements["writer_pad_textbox"]).then(
         fn = generate_basic_html, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_html"]).then(
         fn = convert_to_markdown, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_markdown"]).then(
         copy_string, chapter_processed_successfully_str, writer_ui_elements["token_summary_label1"])
     
     summarisation_parameters['preset_menu'].change(load_preset_values, [summarisation_parameters[k] for k in ['preset_menu', 'interface_state']], [summarisation_parameters[k] for k in ['interface_state','do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
 
-    writer_ui_elements["upload_session_file"].upload(load_session, writer_ui_elements["upload_session_file"],[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_elements["compiled_story_textbox"]]).then(
+    save_params = [
+    writer_ui_elements["writer_pad_textbox"], 
+    writer_ui_elements["story_summary_textbox"], 
+    writer_ui_elements["compiled_story_textbox"]
+    ]
+
+    for key in writer_ui_general_settings:
+        save_params.append(writer_ui_general_settings[key])
+
+    writer_ui_elements["upload_session_file"].upload(fn = load_session, inputs = [writer_ui_elements["upload_session_file"]], outputs = save_params).then(
         fn = generate_basic_html, inputs = writer_ui_elements["writer_pad_textbox"], outputs = writer_ui_elements["writer_pad_html"]).then(
         fn = convert_to_markdown, inputs = writer_ui_elements["writer_pad_textbox"], outputs = writer_ui_elements["writer_pad_markdown"]).then(
         fn = generate_basic_html, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_html"]).then(
         fn = convert_to_markdown, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_markdown"])
     
-    writer_ui_elements["download_session_file_button"].click(fn = save_session, inputs = [writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_elements["compiled_story_textbox"]], outputs = writer_ui_elements["download_session_file"])
+    writer_ui_elements["download_session_file_button"].click(fn = save_session, inputs = save_params, outputs = writer_ui_elements["download_session_file"])
 
     writer_ui_elements["download_compiled_text_file_button"].click(fn = save_compiled_file, inputs = [writer_ui_elements["compiled_story_textbox"], file_mode_txt], outputs = writer_ui_elements["download_compiled_text_file"])
 
