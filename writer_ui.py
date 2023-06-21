@@ -121,7 +121,7 @@ def generate_gradio_ui():
 
 def generate_button_callbacks():
     last_input = gr.State('last_input')
-    summarisation_parameters['interface_state'] = shared.gradio['interface_state']
+    writer_summarisation_ui_state = gr.State()
 
     file_mode_txt = gr.State('txt')
     file_mode_html = gr.State('html')
@@ -163,32 +163,67 @@ def generate_button_callbacks():
     writer_ui_elements["stop_btn"].click(stop_everything_event, None, None, queue=False)
 
     writer_ui_elements["processChapter_btn"].click(copy_string, processing_chapter_str, writer_ui_elements["token_summary_label1"]).then(fn=copycontent, inputs=[writer_ui_general_settings["collate_story_enabled_checkbox"], writer_ui_elements["writer_pad_textbox"], writer_ui_elements["compiled_story_textbox"], writer_ui_general_settings["chapter_separator_textbox"]], outputs=writer_ui_elements["compiled_story_textbox"] ).then(
-        fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=shared.gradio['interface_state']).then(
-        fn=add_summarised_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_general_settings["summarisation_template_dropdown"], writer_ui_elements["story_summary_textbox"], summarisation_parameters['interface_state'], writer_ui_general_settings["use_langchain_summarisation"], writer_ui_general_settings["summarisation_enabled_checkbox"]], outputs=writer_ui_elements["story_summary_textbox"]).then(
+        fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=writer_summarisation_ui_state).then(
+        fn=add_summarised_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_elements["story_summary_textbox"], writer_ui_general_settings["summarisation_template_dropdown"], writer_ui_elements["story_summary_textbox"], writer_summarisation_ui_state, writer_ui_general_settings["use_langchain_summarisation"], writer_ui_general_settings["summarisation_enabled_checkbox"]], outputs=writer_ui_elements["story_summary_textbox"]).then(
         fn=clear_content, inputs=[writer_ui_elements["writer_pad_textbox"], writer_ui_general_settings["clear_pad_content_enabled_checkbox"]], outputs=writer_ui_elements["writer_pad_textbox"]).then(
         fn = generate_basic_html, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_html"]).then(
         fn = convert_to_markdown, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_markdown"]).then(
         copy_string, chapter_processed_successfully_str, writer_ui_elements["token_summary_label1"])
     
-    summarisation_parameters['preset_menu'].change(load_preset_values, [summarisation_parameters[k] for k in ['preset_menu', 'interface_state']], [summarisation_parameters[k] for k in ['interface_state','do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
+    summarisation_parameters['preset_menu'].change(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=writer_summarisation_ui_state).then(fn=load_preset_values,inputs= [summarisation_parameters['preset_menu'], writer_summarisation_ui_state],outputs=[writer_summarisation_ui_state] + [summarisation_parameters[k] for k in ['do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
 
-    save_params = [
-    writer_ui_elements["writer_pad_textbox"], 
-    writer_ui_elements["story_summary_textbox"], 
-    writer_ui_elements["compiled_story_textbox"]
-    ]
+    # def make_save_session(save_params):
+    #     def save_session_cl(timestamp=False):
+    #         return save_session(*save_params, timestamp=timestamp)
+    #     return save_session_cl
 
-    for key in writer_ui_general_settings:
-        save_params.append(writer_ui_general_settings[key])
+    # save_params = [(k, v) for k, v in writer_ui_elements.items()] + [(k, v) for k, v in writer_ui_general_settings.items()] + [(k, v) for k, v in summarisation_parameters.items()]
+    # save_session_fn = make_save_session(save_params)
+    
+    # Transfer all items contained in the dictionaries into a single structure
+    save_elements = {}
+    save_elements.update(writer_ui_elements)
+    save_elements.update(writer_ui_general_settings)
+    # save_elements = list(writer_ui_elements.values()) + list(writer_ui_general_settings.values()) #+ list(summarisation_parameters.values())
 
-    writer_ui_elements["upload_session_file"].upload(fn = load_session, inputs = [writer_ui_elements["upload_session_file"]], outputs = save_params).then(
+    # Create an empty dictionary
+    save_params = {}
+    save_params['interface_state'] = shared.gradio['interface_state']
+
+    def make_save_session():
+        def save_session_cl(timestamp=False):
+            return save_session(*save_params['interface_state'], timestamp=timestamp)
+        return save_session_cl
+
+    save_session_fn = make_save_session()
+
+    # Set up the click event
+    writer_ui_elements["download_session_file_button"].click(fn=modules_ui.gather_interface_values, inputs=[save_elements[k] for k in save_elements.keys()], outputs = save_params['interface_state']).then(
+        fn=save_session_fn, inputs=[], outputs=writer_ui_elements["download_session_file"])
+
+    # writer_ui_elements["download_session_file_button"].click(fn=save_session_fn, inputs=[], outputs=writer_ui_elements["download_session_file"])
+
+
+
+
+
+
+    def make_load_session(load_params):
+        def load_session_cl(input_data):
+            session_data = load_session(input_data)
+            return tuple(session_data[param[0]] for param in load_params)
+        return load_session_cl
+
+    load_params = [(k, v) for k, v in writer_ui_elements.items()] + [(k, v) for k, v in writer_ui_general_settings.items()] + [(k, v) for k, v in summarisation_parameters.items()]
+    load_session_fn = make_load_session(load_params)
+    output_components = [param[1] for param in load_params]
+
+    writer_ui_elements["upload_session_file"].upload(fn = load_session_fn, inputs = [writer_ui_elements["upload_session_file"]], outputs = output_components).then(
         fn = generate_basic_html, inputs = writer_ui_elements["writer_pad_textbox"], outputs = writer_ui_elements["writer_pad_html"]).then(
         fn = convert_to_markdown, inputs = writer_ui_elements["writer_pad_textbox"], outputs = writer_ui_elements["writer_pad_markdown"]).then(
         fn = generate_basic_html, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_html"]).then(
         fn = convert_to_markdown, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_markdown"])
     
-    writer_ui_elements["download_session_file_button"].click(fn = save_session, inputs = save_params, outputs = writer_ui_elements["download_session_file"])
-
     writer_ui_elements["download_compiled_text_file_button"].click(fn = save_compiled_file, inputs = [writer_ui_elements["compiled_story_textbox"], file_mode_txt], outputs = writer_ui_elements["download_compiled_text_file"])
 
     writer_ui_elements["download_compiled_html_file_button"].click(fn = save_compiled_file, inputs = [writer_ui_elements["compiled_story_html"], file_mode_html], outputs = writer_ui_elements["download_compiled_html_file"])
