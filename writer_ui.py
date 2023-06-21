@@ -4,7 +4,7 @@ import modules.ui as modules_ui
 from modules.html_generator import generate_basic_html, convert_to_markdown
 from modules.text_generation import stop_everything_event
 from .writer_params import writer_ui_elements, summarisation_parameters, default_req_params, input_elements, writer_ui_general_settings
-from .writer_utils import get_available_templates, copy_string, copy_prompt_analysis_output, gather_interface_values, copycontent
+from .writer_utils import get_available_templates, copy_string, copy_prompt_analysis_output, gather_interface_values, copycontent, copy_args
 from .writer_prompt import generate_reply_wrapper_enriched
 from .writer_io import save_compiled_file, load_preset_values, load_session, save_session
 from .writer_summarise import add_summarised_content
@@ -172,60 +172,33 @@ def generate_button_callbacks():
     
     summarisation_parameters['preset_menu'].change(fn=gather_interface_values, inputs=[summarisation_parameters[k] for k in input_elements], outputs=writer_summarisation_ui_state).then(fn=load_preset_values,inputs= [summarisation_parameters['preset_menu'], writer_summarisation_ui_state],outputs=[writer_summarisation_ui_state] + [summarisation_parameters[k] for k in ['do_sample', 'temperature', 'top_p', 'typical_p', 'epsilon_cutoff', 'eta_cutoff', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'tfs', 'top_a']])
 
-    # def make_save_session(save_params):
-    #     def save_session_cl(timestamp=False):
-    #         return save_session(*save_params, timestamp=timestamp)
-    #     return save_session_cl
-
-    # save_params = [(k, v) for k, v in writer_ui_elements.items()] + [(k, v) for k, v in writer_ui_general_settings.items()] + [(k, v) for k, v in summarisation_parameters.items()]
-    # save_session_fn = make_save_session(save_params)
-    
-    # Transfer all items contained in the dictionaries into a single structure
-    save_elements = {}
-    save_elements.update(writer_ui_elements)
-    save_elements.update(writer_ui_general_settings)
-    # save_elements = list(writer_ui_elements.values()) + list(writer_ui_general_settings.values()) #+ list(summarisation_parameters.values())
-
-    # Create an empty dictionary
-    save_params = {}
-    save_params['interface_state'] = shared.gradio['interface_state']
-
-    def make_save_session():
-        def save_session_cl(timestamp=False):
-            return save_session(*save_params['interface_state'], timestamp=timestamp)
-        return save_session_cl
-
-    save_session_fn = make_save_session()
-
-    # Set up the click event
-    writer_ui_elements["download_session_file_button"].click(fn=modules_ui.gather_interface_values, inputs=[save_elements[k] for k in save_elements.keys()], outputs = save_params['interface_state']).then(
-        fn=save_session_fn, inputs=[], outputs=writer_ui_elements["download_session_file"])
-
-    # writer_ui_elements["download_session_file_button"].click(fn=save_session_fn, inputs=[], outputs=writer_ui_elements["download_session_file"])
-
-
-
-
-
-
-    def make_load_session(load_params):
-        def load_session_cl(input_data):
-            session_data = load_session(input_data)
-            return tuple(session_data[param[0]] for param in load_params)
-        return load_session_cl
-
-    load_params = [(k, v) for k, v in writer_ui_elements.items()] + [(k, v) for k, v in writer_ui_general_settings.items()] + [(k, v) for k, v in summarisation_parameters.items()]
-    load_session_fn = make_load_session(load_params)
-    output_components = [param[1] for param in load_params]
-
-    writer_ui_elements["upload_session_file"].upload(fn = load_session_fn, inputs = [writer_ui_elements["upload_session_file"]], outputs = output_components).then(
-        fn = generate_basic_html, inputs = writer_ui_elements["writer_pad_textbox"], outputs = writer_ui_elements["writer_pad_html"]).then(
-        fn = convert_to_markdown, inputs = writer_ui_elements["writer_pad_textbox"], outputs = writer_ui_elements["writer_pad_markdown"]).then(
-        fn = generate_basic_html, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_html"]).then(
-        fn = convert_to_markdown, inputs = writer_ui_elements["compiled_story_textbox"], outputs = writer_ui_elements["compiled_story_markdown"])
-    
     writer_ui_elements["download_compiled_text_file_button"].click(fn = save_compiled_file, inputs = [writer_ui_elements["compiled_story_textbox"], file_mode_txt], outputs = writer_ui_elements["download_compiled_text_file"])
 
     writer_ui_elements["download_compiled_html_file_button"].click(fn = save_compiled_file, inputs = [writer_ui_elements["compiled_story_html"], file_mode_html], outputs = writer_ui_elements["download_compiled_html_file"])
 
     writer_ui_elements["download_compiled_markdown_file_button"].click(fn = save_compiled_file, inputs = [writer_ui_elements["compiled_story_markdown"], file_mode_markdown], outputs = writer_ui_elements["download_compiled_markdown_file"])    
+
+    #Session serialisation
+
+    save_elements = {}
+    save_elements.update(writer_ui_elements)
+    save_elements.update(writer_ui_general_settings)
+    save_elements.update(summarisation_parameters)
+    save_serialised_elements = save_elements
+
+    def make_save_session():
+        def save_session_cl(timestamp=False):
+            print(f"save_session_cl save_params: {save_serialised_elements}")
+            return save_session(save_serialised_elements, timestamp=timestamp)
+        return save_session_cl
+
+    save_session_fn = make_save_session()
+
+    writer_ui_elements["download_session_file_button"].click(
+    fn=lambda *values: save_serialised_elements.update({k: v for k, v in zip(save_serialised_elements.keys(), values)}),
+    inputs=[save_elements[k] for k in save_elements.keys()],
+    outputs=[]
+    ).then(
+         fn=save_session_fn, inputs=[], outputs=writer_ui_elements["download_session_file"])
+
+    writer_ui_elements["upload_session_file"].upload(fn = load_session, inputs = [writer_ui_elements["upload_session_file"]], outputs = [save_elements[k] for k in save_elements.keys()])

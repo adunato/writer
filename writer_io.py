@@ -78,7 +78,8 @@ import yaml
     
 #     return writer_text_box, summary_text_box, compiled_story_text_box,summarisation_enabled_checkbox,clear_pad_content_enabled_checkbox,collate_story_enabled_checkbox,use_langchain_summarisation,chapter_separator_textbox, summarisation_template_dropdown, generation_template_dropdown
 
-def save_session(*args, timestamp=False):
+def save_session(args, timestamp=False):
+    print(f"save_session args: {args}")
     if timestamp:
         fname = f"session_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
     else:
@@ -87,14 +88,16 @@ def save_session(*args, timestamp=False):
     if not Path('logs').exists():
         Path('logs').mkdir()
 
-    # Each arg is a tuple where the first element is the key (name of the parameter) 
-    # and the second element is the value (actual value of the parameter)
-    session_data = {arg[0]: arg[1].value for arg in args}
+    # Correct way to copy a dictionary
+    session_data = {k: v for k, v in args.items()}
 
     with open(Path(f'logs/{fname}'), 'w', encoding='utf-8') as f:
-        f.write(json.dumps(session_data, indent=2))
+        json.dump(session_data, f, indent=2)
 
     return Path(f'logs/{fname}')
+
+
+
 
 # def save_session(*args, timestamp=False):
 #     if timestamp:
@@ -116,7 +119,10 @@ def load_session(file):
     file = file.decode('utf-8')
     session_data = json.loads(file)
     
-    return session_data
+    # Get the values from the dictionary and convert to a list
+    values_list = list(session_data.values())
+    
+    return values_list
 
 def load_preset_values(preset_menu, state, return_dict=False):
     # print(f"load_preset_values preset_menu: {preset_menu}")

@@ -29,6 +29,7 @@ def copy_prompt_analysis_output(text_boxA, prompt_analysis, token_count):
     return prompt_analysis
 
 def copy_args(*args):
+    print(f"args:{args}")
     return args
 
 def get_available_templates():
